@@ -1,4 +1,4 @@
-class worldObj{
+class Obj{
     constructor(){
         this.pos;
         this.Global;
@@ -8,16 +8,6 @@ class worldObj{
     }
 }
 
-class blockObj extends worldObj{
-    constructor(){
-        super();
 
-    }
-}
 
-class scene extends worldObj{
-    constructor(){
-        super();
-        
-    }
-}
+export {Obj}
