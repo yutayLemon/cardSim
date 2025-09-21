@@ -29,8 +29,18 @@ const camera = new THREE.PerspectiveCamera(
 renderer.shadowMap.enabled = true;
 
 
-const ambientLight = new THREE.AmbientLight(0xFF0000);
+//light
+const ambientLight = new THREE.AmbientLight(0xffffff,0.3);
 scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xFFFFFF,0.8);
+directionalLight.position.set(1,10,1);
+directionalLight.castShadow = true;
+scene.add(directionalLight);
+
+const directionalHelp = new THREE.DirectionalLightHelper(directionalLight);
+scene.add(directionalHelp);
+
 
 const axesHelp = new THREE.AxesHelper(5);
 scene.add(axesHelp);
@@ -38,7 +48,7 @@ scene.add(axesHelp);
 camera.position.z = 5;
 camera.position.x = 1;
 camera.position.y = 1;
-camera.position.set(0,5,1);
+camera.position.set(0,3,6);
 camera.lookAt(0,0,0);
 
 
@@ -48,7 +58,9 @@ scene.add(gridHelp);
 const controles = new OrbitControls(camera,renderer.domElement);
 
 var cards = [];
-cards.push(new cardObj(THREE,scene));
+cards.push(new cardObj(THREE,scene,2));
+cards[0].place({x:0,y:0,z:0},cards[0].vertices.bottomRight[0]);
+console.log(cards);
 
 
 function animate(time){
