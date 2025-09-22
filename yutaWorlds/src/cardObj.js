@@ -1,10 +1,11 @@
 import { Obj } from "./physicalObj";
+import * as THREE from 'three';
 
-let g = {x:0,y:-0.001,z:0};
+let g = new THREE.Vector3(0,-0.001,0);
 
 
 class cardObj{
-    constructor(THREE,scene,size){
+    constructor(scene,size){
         this.sizeFact = size;
         this.cardRatio = 1.414;
         this.thickRatio = 0.1;
@@ -13,32 +14,73 @@ class cardObj{
         this.height = this.sizeFact * this.cardRatio;
         this.thickness = this.sizeFact * this.thickRatio;
 
-        this.vertices = {
-            topRight:[{x:this.width*0.5,y:this.height*0.5,z:this.thickness*0.5},
-                      {x:this.width*0.5,y:this.height*0.5,z:-this.thickness*0.5}],
-            topLeft:[{x:-this.width*0.5,y:this.height*0.5,z:this.thickness*0.5},
-                      {x:-this.width*0.5,y:this.height*0.5,z:-this.thickness*0.5}],
-            bottomRight:[{x:this.width*0.5,y:-this.height*0.5,z:this.thickness*0.5},
-                      {x:this.width*0.5,y:-this.height*0.5,z:-this.thickness*0.5}],
-            bottomLeft:[{x:-this.width*0.5,y:-this.height*0.5,z:this.thickness*0.5},
-                      {x:-this.width*0.5,y:-this.height*0.5,z:-this.thickness*0.5}]
+        let offx = this.width*0.5;
+        let offy = this.height*0.5;
+        let offz = this.thickness*0.5;
+        this.verticeArr = [new THREE.Vector3(offx,offy,offz),
+                           new THREE.Vector3(offx,offy,-offz),
+
+                           new THREE.Vector3(-offx,offy,offz),
+                           new THREE.Vector3(-offx,offy,-offz),
+
+                           new THREE.Vector3(offx,-offy,offz),
+                           new THREE.Vector3(offx,-offy,-offz),
+
+                           new THREE.Vector3(-offx,-offy,offz),
+                           new THREE.Vector3(-offx,-offy,-offz)];
+        this.vertices = {//index of corosponding vertex
+            topRight:[0,1],
+            topLeft:[2,3],
+            bottomRight:[4,5],
+            bottomLeft:[6,7]
         }
 
-        this.position = {x:0,y:0,z:0};
+        this.vertex = {
+            topRight:()=>{return [this.verticeArr[0],this.verticeArr[1]]},
+            topLeft:()=>{return [this.verticeArr[2],this.verticeArr[3]]},
+            bottomRight:()=>{return [this.verticeArr[4],this.verticeArr[5]]},
+            bottomLeft:()=>{return [this.verticeArr[6],this.verticeArr[7]]}
+        }
 
-        this.force = {x:0,y:0,z:0};
+        this.verticeArrGlobal = [new THREE.Vector3(offx,offy,offz),
+                           new THREE.Vector3(offx,offy,-offz),
+
+                           new THREE.Vector3(-offx,offy,offz),
+                           new THREE.Vector3(-offx,offy,-offz),
+
+                           new THREE.Vector3(offx,-offy,offz),
+                           new THREE.Vector3(offx,-offy,-offz),
+
+                           new THREE.Vector3(-offx,-offy,offz),
+                           new THREE.Vector3(-offx,-offy,-offz)];
+
+        this.surfaceNormal = [
+            new THREE.Vector3(1,0,0),
+            new THREE.Vector3(0,1,0),
+            new THREE.Vector3(0,0,1)
+        ];
+
+        this.position = new THREE.Vector3(0,0,0);
+
+        this.force = new THREE.Vector3(0,0,0);
 
         this.mass = 1;
-        this.torque = {x:0,y:0,z:0};
+        this.moment = new THREE.Vector3((this.mass*(this.thickness*this.thickness+this.height*this.height))/12,
+                                        (this.mass*(this.thickness*this.thickness+this.width*this.width))/12,
+                                        (this.mass*(this.width*this.width+this.height*this.height))/12);
 
-        this.rotation = {x:0,y:0,z:0};
-        this.angacc = {x:0,y:0,z:0};
-        this.angvel = {x:0,y:0,z:0};
+        this.torque = new THREE.Vector3(0,0,0);
 
-        this.acc = {x:0,y:0,z:0};
-        this.vel = {x:0,y:0,z:0};
+        this.rotation = new THREE.Euler(0,0,0);
+        this.angacc = new THREE.Vector3(0,0,0);
+        this.angvel = new THREE.Vector3(0,0,0);
+
+        this.acc = new THREE.Vector3(0,0,0);
+        this.vel = new THREE.Vector3(0,0,0);
 
         this.scale = 1;
+
+        this.restitutionFactor = 1;
 
         this.texture;
 
@@ -61,8 +103,16 @@ class cardObj{
         this.addToScene(scene);
     }
 
+    updateGlobal(){
+        for(let i = 0;i<this.verticeArr.length;i++){
+            this.verticeArrGlobal[i].copy(this.verticeArr[i].clone().add(this.position));
+            //rotation
+        }
+    }
+
     place(pos,corner){
-        this.position = addVect(pos,minusVect(this.position,corner));
+        this.position.sub(corner);
+        this.position.add(pos);
     }
 
     addToScene(scene){
@@ -70,28 +120,37 @@ class cardObj{
     }
 
     updateTorque(){
-        this.torque = {x:0,y:0,z:0};
+        this.torque.set(0,0,0);
 
     }
 
     updateForce(){
-        this.force = {x:0,y:0,z:0};
-        this.force = scaleVect(this.mass,g);
+        this.force.set(0,0,0);
+        this.force.add(g);
+        //this.force = scaleVect(this.mass,g);
     }
 
     update(){
-        this.acc = scaleVect(1/this.mass,this.force);
-        this.angacc = scaleVect(1/this.mass,this.torque);//appliey inertial formular
+        let h = 1;
 
-        this.vel = addVect(this.vel,this.acc);
-        this.angvel = addVect(this.angvel,this.angacc);
+        this.acc.copy(this.force.clone().divideScalar(this.mass));
+        this.angacc.copy(this.torque.clone().divide(this.moment));
 
-        this.position = addVect(this.position,this.vel);
-        this.rotation = addVect(this.rotation,this.angvel);
+        this.vel.add(this.acc.clone().multiplyScalar(h));
+        this.angvel.add(this.angacc.clone().multiplyScalar(h));
 
-        this.threeJsObj.position.set(this.position.x,this.position.y,this.position.z);
-        this.threeJsObj.rotation.set(this.rotation.x,this.rotation.y,this.rotation.z);
+        this.position.add(this.vel.clone().multiplyScalar(h));
+        this.rotation.x += this.angvel.x * h;
+        this.rotation.y += this.angvel.y * h;
+        this.rotation.z += this.angvel.z * h;
+        
+        this.threeJsObj.position.copy(this.position);
+        this.threeJsObj.rotation.copy(this.rotation);
         this.threeJsObj.scale.set(this.scale,this.scale,this.scale);
+    }
+
+    groundCalc(){
+
     }
 
     colide(){
@@ -99,15 +158,4 @@ class cardObj{
     }
 }
 
-function addVect(vect1,vect2){
-    return {x:vect1.x+vect2.x,y:vect1.y+vect2.y,z:vect1.z+vect2.z}
-}
-
-function minusVect(vect1,vect2){
-    return {x:vect1.x-vect2.x,y:vect1.y-vect2.y,z:vect1.z-vect2.z}
-}
-
-function scaleVect(num,vect){
-    return {x:num*vect.x,y:num*vect.y,z:num*vect.z};
-}
 export {cardObj}

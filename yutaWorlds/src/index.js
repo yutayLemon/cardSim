@@ -58,10 +58,9 @@ scene.add(gridHelp);
 const controles = new OrbitControls(camera,renderer.domElement);
 
 var cards = [];
-cards.push(new cardObj(THREE,scene,2));
-cards[0].place({x:0,y:0,z:0},cards[0].vertices.bottomRight[0]);
+cards.push(new cardObj(scene,2));
+cards[0].place(new THREE.Vector3(0,0,0),cards[0].vertex.bottomRight()[0]);
 console.log(cards);
-
 
 function animate(time){
     controles.update();
@@ -77,6 +76,7 @@ function animate(time){
     
     renderer.render(scene,camera);
 }
+window.step = function(){animate();console.log(cards)};
 
 
 renderer.render(scene,camera);
