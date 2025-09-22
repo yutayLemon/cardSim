@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import {cardObj} from './cardObj'
-
+import {cardObj,playerObj} from './cardObj'
+import {state,initKeyInput} from './keyInput.js'
 
 
 const mousePos = new THREE.Vector2();
@@ -48,7 +48,7 @@ scene.add(axesHelp);
 camera.position.z = 5;
 camera.position.x = 1;
 camera.position.y = 1;
-camera.position.set(0,3,6);
+camera.position.set(-6,3,0);
 camera.lookAt(0,0,0);
 
 
@@ -57,10 +57,17 @@ scene.add(gridHelp);
 
 const controles = new OrbitControls(camera,renderer.domElement);
 
+
+
+initKeyInput();
+
 var cards = [];
 cards.push(new cardObj(scene,2));
 cards[0].place(new THREE.Vector3(0,0,0),cards[0].vertex.bottomRight()[0]);
 console.log(cards);
+
+let player = new playerObj(scene,0.5);
+player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft()[0]);
 
 function animate(time){
     controles.update();
@@ -71,6 +78,10 @@ function animate(time){
         card.updateForce();
         card.update();
     }
+
+    player.updateTorque();
+    player.updateForce();
+    player.update();
 
 
     
