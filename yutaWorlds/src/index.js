@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import {cardObj,playerObj} from './cardObj'
 import {state,initKeyInput} from './keyInput.js'
+import {updateDebug,initDebug,debugVertex} from './debug.js'
 
 
 const mousePos = new THREE.Vector2();
@@ -60,6 +61,7 @@ const controles = new OrbitControls(camera,renderer.domElement);
 
 
 initKeyInput();
+initDebug(scene);
 
 var cards = [];
 cards.push(new cardObj(scene,2));

@@ -1,6 +1,7 @@
 import {boxObj} from './boxObj'
 import * as THREE from 'three';
 import {state} from './keyInput.js'
+import {addDebugPoint} from './debug.js'
 
 let g = new THREE.Vector3(0,-0.001,0);
 
@@ -12,6 +13,7 @@ class cardObj extends boxObj{
     }
 
     updateTorque(){
+        addDebugPoint(this.vertex.topRight[0],{r:200,g:0,b:200});
         this.torque.set(0,0,0);
 
     }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {addDebugPoint} from './debug.js'
 
 class boxObj{
     constructor(scene,size,cardRatio,thickRatio){
@@ -11,7 +12,7 @@ class boxObj{
         this.thickness = this.sizeFact * this.thickRatio;
 
         this.debugPoints = [];
-        
+
         this.position = new THREE.Vector3(0,0,0);
 
         this.force = new THREE.Vector3(0,0,0);
