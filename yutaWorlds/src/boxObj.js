@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {addDebugPoint,updateDebug} from './debug.js'
-import {cloideBox2Box} from './colideDetect.js'
+import {cloideBox2Box,resolveCollision,updateArrCollisions,resolveCollisionPlane} from './colideDetect.js'
 
 class boxObj{
     constructor(scene,size,cardRatio,thickRatio){
@@ -11,8 +11,6 @@ class boxObj{
         this.width = this.sizeFact;
         this.height = this.sizeFact * this.cardRatio;
         this.thickness = this.sizeFact * this.thickRatio;
-
-        this.debugPoints = [];
 
         this.position = new THREE.Vector3(0,0,0);
 
@@ -38,10 +36,6 @@ class boxObj{
         this.texture;
 
         this.name;
-
-        this.width = this.sizeFact;
-        this.height = this.sizeFact * this.cardRatio;
-        this.thickness = this.sizeFact * this.thickRatio;
 
         let offx = this.width*0.5;
         let offy = this.height*0.5;
@@ -89,7 +83,12 @@ class boxObj{
             new THREE.Vector3(0,0,1)
         ];
 
-        this.mass = 1;
+        this.globalSurfaceNormal = [
+            new THREE.Vector3(1,0,0),
+            new THREE.Vector3(0,1,0),
+            new THREE.Vector3(0,0,1)
+        ];
+
         this.moment = new THREE.Vector3((this.mass*(this.thickness*this.thickness+this.height*this.height))/12,
                                         (this.mass*(this.thickness*this.thickness+this.width*this.width))/12,
                                         (this.mass*(this.width*this.width+this.height*this.height))/12);
@@ -99,10 +98,8 @@ class boxObj{
             color:this.color
         });
         const boxMesh = new THREE.Mesh(boxGemo,boxMet);
-        this.threeJSMesh = boxMesh;
         this.threeJsObj = boxMesh;
 
-        this.threeJsObj.name = this.name;
         this.threeJsObj.castShadow = true;
         this.threeJsObj.name = this.name;
 
@@ -110,20 +107,7 @@ class boxObj{
     }
 
     updateColide(otherObj){
-        let collision = cloideBox2Box(this,otherObj);
-        if(collision.colide){
-            let relativeVel = this.vel.dot(collision.normal) - otherObj.vel.dot(collision.normal);//TOdo cheak signs
-            let impulse = collision.normal.dot(collision.normal.clone().multiplyScalar(relativeVel*(this.restitutionFactor-1)));
-            impulse /= collision.normal.dot(collision.normal.clone().multiplyScalar((1/this.mass+1/otherObj.mass)));
-            console.log(collision.normal);
-            //console.log(relativeVel,impulse,collision.normal,this.restitutionFactor);
-
-            if(isNaN(impulse)){
-            }else{
-                this.vel.add(collision.normal.clone().multiplyScalar(impulse/this.mass));
-                otherObj.vel.sub(collision.normal.clone().multiplyScalar(impulse/otherObj.mass));
-            }
-        }
+        resolveCollision(this,otherObj);
     }
 
     updateBoxDebug(){
@@ -132,9 +116,15 @@ class boxObj{
 
     updateGlobal(){
         for(let i = 0;i<this.verticeArr.length;i++){
-            this.verticeArrGlobal[i].copy(this.verticeArr[i].clone());
+            this.verticeArrGlobal[i].copy(this.verticeArr[i]);
             this.verticeArrGlobal[i].applyEuler(this.rotation);
             this.verticeArrGlobal[i].add(this.position);
+        }
+
+
+        for(let i = 0;i<this.surfaceNormal.length;i++){
+            this.globalSurfaceNormal[i].copy(this.surfaceNormal[i]);
+            this.globalSurfaceNormal[i].applyEuler(this.rotation);
         }
     }
 
@@ -175,10 +165,8 @@ class boxObj{
         this.threeJsObj.rotation.copy(this.rotation);
         this.threeJsObj.scale.set(this.scale,this.scale,this.scale);
 
-        this.threeJSMesh.material.color.set(this.color);
+        this.threeJsObj.material.color.set(this.color);
     }
 }
-
-
 
 export {boxObj};

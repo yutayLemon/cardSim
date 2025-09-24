@@ -2,6 +2,7 @@ import {boxObj} from './boxObj'
 import * as THREE from 'three';
 import {state} from './keyInput.js'
 import {addDebugPoint} from './debug.js'
+import {resolveCollisionPlane} from './colideDetect.js'
 
 let g = new THREE.Vector3(0,-0.001,0);
 
@@ -11,8 +12,19 @@ class cardObj extends boxObj{
         this.name = "card";
         this.color = 0xffff00;
     }
-    updateBoxDebug(){
 
+    updateBoxDebug(){
+        addDebugPoint(this.globalVertex.topRight[0],{r:100,g:0,b:200});
+        addDebugPoint(this.globalVertex.topRight[1],{r:100,g:0,b:200});
+
+        addDebugPoint(this.globalVertex.topLeft[0],{r:0,g:100,b:200});
+        addDebugPoint(this.globalVertex.topLeft[1],{r:0,g:100,b:200});
+
+        addDebugPoint(this.globalVertex.bottomLeft[0],{r:100,g:50,b:200});
+        addDebugPoint(this.globalVertex.bottomLeft[1],{r:100,g:50,b:200});
+
+        addDebugPoint(this.globalVertex.bottomRight[0],{r:0,g:0,b:100});
+        addDebugPoint(this.globalVertex.bottomRight[1],{r:0,g:0,b:100});
     }
 
     updateTorque(){
@@ -22,7 +34,7 @@ class cardObj extends boxObj{
 
     updateForce(){
         this.force.set(0,0,0);
-        //this.force.add(g);
+        this.force.add(g);
         //this.force = scaleVect(this.mass,g);
     }
 
@@ -124,5 +136,18 @@ class playerObj extends boxObj{
     }
 }
 
-
-export {cardObj,playerObj}
+class approxPlane extends boxObj{
+    constructor(scene,size){
+        super(scene,size,1,0.001);
+        this.name = "plane";
+        this.color = 0xffffff;
+        this.mass = 1000;
+        this.rotation.x = Math.PI/2;
+        this.restitutionFactor = 1;
+        //this.rotation.y = Math.PI/2;
+    }
+    updateColide(otherObj){
+        resolveCollisionPlane(this,otherObj);
+    }
+}
+export {cardObj,playerObj,approxPlane}

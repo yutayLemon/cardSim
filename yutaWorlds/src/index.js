@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import {cardObj,playerObj} from './cardObj'
+import {cardObj,playerObj,approxPlane} from './cardObj'
 import {state,initKeyInput} from './keyInput.js'
 import {updateDebug,initDebug,debugVertex,debugP} from './debug.js'
-import {cloideBox2Box,resolveCollisions} from './colideDetect.js'
-
+import {cloideBox2Box,resolveCollision,updateArrCollisions} from './colideDetect.js'
 
 const mousePos = new THREE.Vector2();
 
@@ -68,31 +67,41 @@ var cards = [];
 cards.push(new cardObj(scene,2));
 cards.push(new cardObj(scene,1.5));
 cards[1].rotation.x = 1;
-cards[0].place(new THREE.Vector3(0,2,-2),cards[0].vertex.bottomRight[0]);
+cards[0].place(new THREE.Vector3(0,2,0),cards[0].vertex.bottomRight[0]);
 cards[1].place(new THREE.Vector3(0,2,4),cards[1].vertex.bottomRight[1]);
-cards[0].vel.set(0,0,0.006);
-cards[1].vel.set(0,0,-0.006);
+cards[0].vel.set(0,0,0);
+cards[1].vel.set(0,0,-0.03);
 console.log(cards);
 
 let player = new playerObj(scene,0.5);
 player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft[0]);
 
+let floor = new approxPlane(scene,10);
+
 function animate(time){
     controles.update();
 
-    let objs = cards.concat([player]);//TODO DEBUGGG
-    resolveCollisions(objs);//TODO think about placement
-
+    
 
     for(const card of cards){
         card.update();
     }
     player.updateDirVects(camera);
     player.update();
+    floor.update();
+
     updateDebug();
     //console.log(cloideBox2Box(cards[0],player));
+    let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
+    updateArrCollisions(objs);//TODO think about placement
+
     if(cloideBox2Box(cards[0],player).colide){
       player.color = 0x0000ff;
+    }else{
+      player.color = 0x00ff00;
+    }
+    if(cloideBox2Box(cards[1],player).colide){
+      player.color = 0xff00ff;
     }else{
       player.color = 0x00ff00;
     }
