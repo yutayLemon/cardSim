@@ -132,8 +132,9 @@ class boxObj{
 
     updateGlobal(){
         for(let i = 0;i<this.verticeArr.length;i++){
-            this.verticeArrGlobal[i].copy(this.verticeArr[i].clone().applyEuler(this.rotation).add(this.position));
-            //rotation
+            this.verticeArrGlobal[i].copy(this.verticeArr[i].clone());
+            this.verticeArrGlobal[i].applyEuler(this.rotation);
+            this.verticeArrGlobal[i].add(this.position);
         }
     }
 

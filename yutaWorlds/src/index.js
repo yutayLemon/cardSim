@@ -66,7 +66,12 @@ initDebug(scene);
 
 var cards = [];
 cards.push(new cardObj(scene,2));
-cards[0].place(new THREE.Vector3(0,2,0),cards[0].vertex.bottomRight[0]);
+cards.push(new cardObj(scene,1.5));
+cards[1].rotation.x = 1;
+cards[0].place(new THREE.Vector3(0,2,-2),cards[0].vertex.bottomRight[0]);
+cards[1].place(new THREE.Vector3(0,2,4),cards[1].vertex.bottomRight[1]);
+cards[0].vel.set(0,0,0.006);
+cards[1].vel.set(0,0,-0.006);
 console.log(cards);
 
 let player = new playerObj(scene,0.5);

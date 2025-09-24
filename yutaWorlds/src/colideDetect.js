@@ -14,8 +14,13 @@ function cloideBox2Box(box1,box2){
     let normSet2 = box2.surfaceNormal;
 
     let crossProdNormals = [];
-    for(let i = 0;i<normSet1.length;i++){
-        crossProdNormals.push(new THREE.Vector3().crossVectors(normSet1[i],normSet2[i]));
+
+    for(const n1 of normSet1){
+        for(const n2 of normSet2){
+            if(!n1.equals(n2)){
+                crossProdNormals.push(new THREE.Vector3().crossVectors(n1,n2));
+            }
+        }
     }
 
     let minOverLap;
@@ -72,8 +77,8 @@ function cloideBox2Box(box1,box2){
             minOverLap = result.val;
             colideClass = 'no vertex';
             colideNormal = normal;
-            box1ContactPoint = normal.clone().multiplyScalar(result.box1ContactPoint);
-            box2ContactPoint = normal.clone().multiplyScalar(result.box2ContactPoint);
+            box1ContactPoint = normal.clone().multiplyScalar(result.lenBox12P);
+            box2ContactPoint = normal.clone().multiplyScalar(result.lenBox22P);
         }
     }
     return {colide:colide,class:colideClass,normal:colideNormal,contact:{box1:box1ContactPoint,box2:box2ContactPoint}};
