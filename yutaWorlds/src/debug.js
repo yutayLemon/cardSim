@@ -4,19 +4,15 @@ let debugP = [];
 let debugObj;
 
 function updateDebug(){
-    let flat = [];
-    let colors = [];
-    for(const point of debugP){
-        flat.push(point.pos.x);
-        flat.push(point.pos.y);
-        flat.push(point.pos.z);
-
-        colors.push(point.color.r);
-        colors.push(point.color.g);
-        colors.push(point.color.b);
+    const flat = new Float32Array(debugP.length * 3);
+    const colors = new Float32Array(debugP.length * 3);
+    for (let i = 0; i < debugP.length; i++) {
+        const p = debugP[i];
+        flat.set([p.pos.x, p.pos.y, p.pos.z], i * 3);
+        colors.set([p.color.r, p.color.g, p.color.b], i * 3);
     }
-    debugObj.geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(flat),3));
-    debugObj.geometry.setAttribute('color',new THREE.BufferAttribute(new Float32Array(colors),3));
+    debugObj.geometry.setAttribute('position',new THREE.BufferAttribute(flat,3));
+    debugObj.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
     debugObj.geometry.attributes.position.needsUpdate = true;
 
 
@@ -32,7 +28,7 @@ function initDebug(scene){
     ]);
     geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-    const material = new THREE.PointsMaterial({ color: 0xff0000, size: 0.1 });
+    const material = new THREE.PointsMaterial({size: 0.1 ,vertexColors:true});
     debugObj = new THREE.Points(geometry, material);
     scene.add(debugObj);
 }
@@ -49,4 +45,4 @@ function addDebugPoint(pos,color){
     debugP.push(newDebug);
 }
 
-export {updateDebug,initDebug,debugVertex,addDebugPoint}
+export {updateDebug,initDebug,debugVertex,addDebugPoint,debugP}

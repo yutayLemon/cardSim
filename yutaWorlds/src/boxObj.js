@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {addDebugPoint} from './debug.js'
+import {addDebugPoint,updateDebug} from './debug.js'
+import {cloideBox2Box} from './colideDetect.js'
 
 class boxObj{
     constructor(scene,size,cardRatio,thickRatio){
@@ -32,7 +33,7 @@ class boxObj{
 
         this.scale = 1;
 
-        this.restitutionFactor = 1;
+        this.restitutionFactor = 0.8;
 
         this.texture;
 
@@ -56,18 +57,12 @@ class boxObj{
 
                            new THREE.Vector3(-offx,-offy,offz),
                            new THREE.Vector3(-offx,-offy,-offz)];
-        this.vertices = {//index of corosponding vertex
-            topRight:[0,1],
-            topLeft:[2,3],
-            bottomRight:[4,5],
-            bottomLeft:[6,7]
-        }
 
         this.vertex = {
-            topRight:()=>{return [this.verticeArr[0],this.verticeArr[1]]},
-            topLeft:()=>{return [this.verticeArr[2],this.verticeArr[3]]},
-            bottomRight:()=>{return [this.verticeArr[4],this.verticeArr[5]]},
-            bottomLeft:()=>{return [this.verticeArr[6],this.verticeArr[7]]}
+            topRight:[this.verticeArr[0],this.verticeArr[1]],
+            topLeft:[this.verticeArr[2],this.verticeArr[3]],
+            bottomRight:[this.verticeArr[4],this.verticeArr[5]],
+            bottomLeft:[this.verticeArr[6],this.verticeArr[7]]
         }
 
         this.verticeArrGlobal = [new THREE.Vector3(offx,offy,offz),
@@ -82,6 +77,12 @@ class boxObj{
                            new THREE.Vector3(-offx,-offy,offz),
                            new THREE.Vector3(-offx,-offy,-offz)];
 
+        this.globalVertex = {
+            topRight:[this.verticeArrGlobal[0],this.verticeArrGlobal[1]],
+            topLeft:[this.verticeArrGlobal[2],this.verticeArrGlobal[3]],
+            bottomRight:[this.verticeArrGlobal[4],this.verticeArrGlobal[5]],
+            bottomLeft:[this.verticeArrGlobal[6],this.verticeArrGlobal[7]]
+        }
         this.surfaceNormal = [
             new THREE.Vector3(1,0,0),
             new THREE.Vector3(0,1,0),
@@ -108,9 +109,30 @@ class boxObj{
         this.addToScene(scene);
     }
 
+    updateColide(otherObj){
+        let collision = cloideBox2Box(this,otherObj);
+        if(collision.colide){
+            let relativeVel = this.vel.dot(collision.normal) - otherObj.vel.dot(collision.normal);//TOdo cheak signs
+            let impulse = collision.normal.dot(collision.normal.clone().multiplyScalar(relativeVel*(this.restitutionFactor-1)));
+            impulse /= collision.normal.dot(collision.normal.clone().multiplyScalar((1/this.mass+1/otherObj.mass)));
+            console.log(collision.normal);
+            //console.log(relativeVel,impulse,collision.normal,this.restitutionFactor);
+
+            if(isNaN(impulse)){
+            }else{
+                this.vel.add(collision.normal.clone().multiplyScalar(impulse/this.mass));
+                otherObj.vel.sub(collision.normal.clone().multiplyScalar(impulse/otherObj.mass));
+            }
+        }
+    }
+
+    updateBoxDebug(){
+
+    }
+
     updateGlobal(){
         for(let i = 0;i<this.verticeArr.length;i++){
-            this.verticeArrGlobal[i].copy(this.verticeArr[i].clone().add(this.position));
+            this.verticeArrGlobal[i].copy(this.verticeArr[i].clone().applyEuler(this.rotation).add(this.position));
             //rotation
         }
     }
@@ -124,7 +146,17 @@ class boxObj{
         scene.add(this.threeJsObj);
     }
 
+    updateTorque(){
+    }
+    
+    updateForce(){
+    }
+
     update(){
+        this.updateGlobal();
+        this.updateForce();
+        this.updateTorque();
+        this.updateBoxDebug();
         let h = 1;
 
         this.acc.copy(this.force.clone().divideScalar(this.mass));
