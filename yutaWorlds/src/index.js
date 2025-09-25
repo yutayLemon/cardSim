@@ -78,22 +78,20 @@ player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft[0]);
 
 let floor = new approxPlane(scene,10);
 
+let tick = 0;
 function animate(time){
     controles.update();
+    player.updateDirVects(camera);
 
     
-
+    //uodates
     for(const card of cards){
-        card.update();
+        card.update(tick);
     }
-    player.updateDirVects(camera);
-    player.update();
-    floor.update();
+    player.update(tick);
+    floor.update(tick);
 
     updateDebug();
-    //console.log(cloideBox2Box(cards[0],player));
-    let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
-    updateArrCollisions(objs);//TODO think about placement
 
     if(cloideBox2Box(cards[0],player).colide){
       player.color = 0x0000ff;
@@ -105,6 +103,9 @@ function animate(time){
     }else{
       player.color = 0x00ff00;
     }
+
+    let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
+    updateArrCollisions(objs);//TODO think about placement
     
     renderer.render(scene,camera);
 }

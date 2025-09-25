@@ -4,13 +4,14 @@ import {state} from './keyInput.js'
 import {addDebugPoint} from './debug.js'
 import {resolveCollisionPlane} from './colideDetect.js'
 
-let g = new THREE.Vector3(0,-0.001,0);
+let g = new THREE.Vector3(0,-0.1,0);
 
 class cardObj extends boxObj{
     constructor(scene,size){
         super(scene,size,1.414,0.1);
         this.name = "card";
         this.color = 0xffff00;
+        this.mass = 0.1;
     }
 
     updateBoxDebug(){
@@ -34,7 +35,7 @@ class cardObj extends boxObj{
 
     updateForce(){
         this.force.set(0,0,0);
-        this.force.add(g);
+        this.force.add(g.multiplyScalar(this.mass));
         //this.force = scaleVect(this.mass,g);
     }
 

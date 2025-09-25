@@ -18,14 +18,8 @@ function resolveCollision(obj1,obj2){
 function resolveCollisionPlane(plane,obj){
         let collision = cloideBox2Box(plane,obj);
         if(collision.colide){
-            let relativeVel = obj.vel.dot(collision.normal);
-            let impulse = relativeVel*(obj.restitutionFactor+1)*(-1);
-            impulse /= 1/obj.mass;
-        if(isNaN(impulse)){
-        }else{
-                obj.vel.add(collision.normal.clone().multiplyScalar(impulse/obj.mass));
+                obj.vel.sub(plane.globalSurfaceNormal[2].clone().multiplyScalar(obj.vel.dot(plane.globalSurfaceNormal[2])));
         }
-    }
 
 }
 

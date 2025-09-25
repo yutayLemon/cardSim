@@ -23,8 +23,11 @@ class boxObj{
         this.torque = new THREE.Vector3(0,0,0);
 
         this.rotation = new THREE.Euler(0,0,0);
+        this.rotationMatrx = new THREE.Matrix3();
+
         this.angacc = new THREE.Vector3(0,0,0);
         this.angvel = new THREE.Vector3(0,0,0);
+        this.omega = new THREE.Vector3(0,0,0);
 
         this.acc = new THREE.Vector3(0,0,0);
         this.vel = new THREE.Vector3(0,0,0);
@@ -88,10 +91,12 @@ class boxObj{
             new THREE.Vector3(0,1,0),
             new THREE.Vector3(0,0,1)
         ];
-
-        this.moment = new THREE.Vector3((this.mass*(this.thickness*this.thickness+this.height*this.height))/12,
-                                        (this.mass*(this.thickness*this.thickness+this.width*this.width))/12,
-                                        (this.mass*(this.width*this.width+this.height*this.height))/12);
+        this.inertiaTensors = new THREE.Matrix3();
+        this.inertiaTensors.set(
+            (this.mass*(this.thickness*this.thickness+this.height*this.height))/12,0,0,
+            0,(this.mass*(this.thickness*this.thickness+this.width*this.width))/12,0,
+            0,0,(this.mass*(this.width*this.width+this.height*this.height))/12
+        );
 
         const boxGemo = new THREE.BoxGeometry(this.width , this.height , this.thickness);
         const boxMet = new THREE.MeshStandardMaterial({
@@ -102,6 +107,8 @@ class boxObj{
 
         this.threeJsObj.castShadow = true;
         this.threeJsObj.name = this.name;
+
+        this.lastTick = 0;
 
         this.addToScene(scene);
     }
@@ -143,7 +150,10 @@ class boxObj{
     updateForce(){
     }
 
-    update(){
+    update(tick){
+        let deltaTime = this.lastTick - tick;
+
+
         this.updateGlobal();
         this.updateForce();
         this.updateTorque();
@@ -151,8 +161,14 @@ class boxObj{
         let h = 1;
 
         this.acc.copy(this.force.clone().divideScalar(this.mass));
-        this.angacc.copy(this.torque.clone().divide(this.moment));
+        //this.angacc.copy(this.torque.clone().divide(this.moment));
+        this.updatePosVel(h);
+        this.threeJsObj.scale.set(this.scale,this.scale,this.scale);
 
+        this.threeJsObj.material.color.set(this.color);
+    }
+
+    updatePosVel(h){
         this.vel.add(this.acc.clone().multiplyScalar(h));
         this.angvel.add(this.angacc.clone().multiplyScalar(h));
 
@@ -160,12 +176,12 @@ class boxObj{
         this.rotation.x += this.angvel.x * h;
         this.rotation.y += this.angvel.y * h;
         this.rotation.z += this.angvel.z * h;
+
+        this.rotationMatrx.multiply(new THREE.Matrix3().makeRotationFromEular(this.angvel));
+
         
         this.threeJsObj.position.copy(this.position);
         this.threeJsObj.rotation.copy(this.rotation);
-        this.threeJsObj.scale.set(this.scale,this.scale,this.scale);
-
-        this.threeJsObj.material.color.set(this.color);
     }
 }
 
