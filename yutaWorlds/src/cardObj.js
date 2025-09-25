@@ -11,7 +11,7 @@ class cardObj extends boxObj{
         super(scene,size,1.414,0.1);
         this.name = "card";
         this.color = 0xffff00;
-        this.mass = 0.1;
+        this.mass = 0.6;
     }
 
     updateBoxDebug(){
@@ -96,7 +96,6 @@ class playerObj extends boxObj{
     updateForce(){
         this.force.set(0,0,0);
         this.vel.set(0,0,0);
-        this.angvel.set(0,0,0);
         let ff = 0.000001;
         
         if(state['KeyW']){
@@ -118,13 +117,13 @@ class playerObj extends boxObj{
             this.vel.sub(this.upVect);
         }
         if(state['KeyZ']){
-            this.angvel.x = 0.1;
+           // this.angvel.x = 0.1;
         }
         if(state['KeyX']){
-            this.angvel.y = 0.1;
+           // this.angvel.y = 0.1;
         }
         if(state['KeyC']){
-            this.angvel.z = 0.1;
+            //this.angvel.z = 0.1;
         }
     }
 
@@ -139,13 +138,12 @@ class playerObj extends boxObj{
 
 class approxPlane extends boxObj{
     constructor(scene,size){
-        super(scene,size,1,0.001);
+        super(scene,size,0.001,1);
         this.name = "plane";
         this.color = 0xffffff;
         this.mass = 1000;
-        this.rotation.x = Math.PI/2;
+
         this.restitutionFactor = 1;
-        //this.rotation.y = Math.PI/2;
     }
     updateColide(otherObj){
         resolveCollisionPlane(this,otherObj);

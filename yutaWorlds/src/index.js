@@ -62,15 +62,23 @@ const controles = new OrbitControls(camera,renderer.domElement);
 
 initKeyInput();
 initDebug(scene);
+//WTF
+        const euler = new THREE.Euler(Math.PI*0.25, 0, 0, 'XYZ');
+        const rotationMatrix4 = new THREE.Matrix4().makeRotationFromEuler(euler);
+        const rotationMatrix3 = new THREE.Matrix3().setFromMatrix4(rotationMatrix4);
+
+
+
 
 var cards = [];
 cards.push(new cardObj(scene,2));
-cards.push(new cardObj(scene,1.5));
-cards[1].rotation.x = 1;
+cards.push(new cardObj(scene,2));
 cards[0].place(new THREE.Vector3(0,2,0),cards[0].vertex.bottomRight[0]);
 cards[1].place(new THREE.Vector3(0,2,4),cards[1].vertex.bottomRight[1]);
 cards[0].vel.set(0,0,0);
-cards[1].vel.set(0,0,-0.03);
+//cards[1].vel.set(0,0,-0.03);
+//cards[1].rotationMatrx.multiply(rotationMatrix3);
+cards[1].angMomentum.set(0.05,0.05,0.05);
 console.log(cards);
 
 let player = new playerObj(scene,0.5);
@@ -111,6 +119,7 @@ function animate(time){
 }
 window.step = function(){animate();console.log(cards)};
 
+//window.upMom = function(){cards[1].angMomentum.set(0,0.1,0)}
 
 renderer.render(scene,camera);
 renderer.setAnimationLoop(animate);
