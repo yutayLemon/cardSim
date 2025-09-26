@@ -4,6 +4,31 @@ import {addDebugPoint} from './debug.js'
 function resolveCollision(obj1,obj2){
     let collision = cloideBox2Box(obj1,obj2);
         if(collision.colide){
+            let impulse = getImpulse(obj1,obj2,1,collision);
+        if(isNaN(impulse)){
+        }else{
+                obj1.vel.sub(collision.normal.clone().multiplyScalar(impulse/obj1.mass));
+                obj2.vel.add(collision.normal.clone().multiplyScalar(impulse/obj2.mass));
+
+                obj1.omega.sub(collision.contact.box1.clone()
+                .cross(collision.normal)
+                .applyMatrix3(obj1.inertiaTensorInverse)
+                .multiplyScalar(impulse));
+                
+                obj2.omega.add(collision.contact.box2.clone()
+                .cross(collision.normal)
+                .applyMatrix3(obj2.inertiaTensorInverse)
+                .multiplyScalar(impulse));
+
+
+                console.log(obj1.omega,obj2.omega);
+        }
+    }
+}
+/*
+function resolveCollision(obj1,obj2){
+    let collision = cloideBox2Box(obj1,obj2);
+        if(collision.colide){
             let relativeVel = obj1.vel.dot(collision.normal) - obj2.vel.dot(collision.normal);
             let impulse = relativeVel*(obj1.restitutionFactor+1)*(-1);
             impulse /= 1/obj1.mass+1/obj2.mass;
@@ -13,7 +38,7 @@ function resolveCollision(obj1,obj2){
                 obj2.vel.sub(collision.normal.clone().multiplyScalar(impulse/obj2.mass));
         }
     }
-}
+}*/
 
 function resolveCollisionPlane(plane,obj){
         let collision = cloideBox2Box(plane,obj);
@@ -30,6 +55,34 @@ function updateArrCollisions(arr){
             arr[i].updateColide(arr[j]);
         }
     }
+}
+
+function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is unit
+    let velp1 = obj1.vel.clone().add(obj1.omega.clone().cross(collision.contact.box1));
+    let velp2 = obj2.vel.clone().add(obj2.omega.clone().cross(collision.contact.box2));
+
+    let relativeVel = velp2.clone().sub(velp1);
+    let impulse = collision.normal.dot(relativeVel.clone().multiplyScalar((-1)*eFact-1));
+
+    let impInvRcrossR1 = collision.contact.box1.clone();
+    impInvRcrossR1.cross(collision.normal);
+    impInvRcrossR1.cross(collision.contact.box1);
+    impInvRcrossR1.applyMatrix3(obj1.inertiaTensorInverse);
+
+    let impInvRcrossR2 = collision.contact.box2.clone();
+    impInvRcrossR2.cross(collision.normal);
+    impInvRcrossR2.cross(collision.contact.box2);
+    impInvRcrossR2.applyMatrix3(obj2.inertiaTensorInverse);
+
+    let den = 0;
+    den += 1/obj1.mass;
+    den += 1/obj2.mass;
+
+    den += collision.normal.dot(impInvRcrossR1);
+    den += collision.normal.dot(impInvRcrossR2);
+
+
+    return impulse/den;
 }
 
 function cloideBox2Box(box1,box2){

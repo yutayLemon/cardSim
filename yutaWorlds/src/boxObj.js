@@ -181,6 +181,8 @@ class boxObj{
 
     updatePosVel(h){
 
+
+        //TODO FIX THIS FUCKER
         this.position.add(this.vel.clone().multiplyScalar(h));
         ///update omega from impulse
         //this.omega = this.rotationMatrx*this.inertiaTensorInverse*this.rotationMatrx^T*this.angMomentum;
