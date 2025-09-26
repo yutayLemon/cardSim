@@ -191,9 +191,9 @@ class boxObj{
         .multiplyMatrices(this.rotationMatrx.clone(),this.inertiaTensorInverse)
         .multiply(this.rotationMatrx.clone().transpose());
            // console.log(this.rotationMatrx.clone().transpose(),this.inertiaTensorInverse);
-        this.omega.copy(this.angMomentum.clone().applyMatrix3(globInertia));
+        //this.omega.copy(this.angMomentum.clone().applyMatrix3(globInertia));
         /////TO FUCKING DOOOO
-        
+        //console.log(this.omega);
         addOmega(this.rotationMatrx,this.omega);
 
         //WTFF FUCK why 4D

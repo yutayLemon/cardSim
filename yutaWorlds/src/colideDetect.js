@@ -21,7 +21,8 @@ function resolveCollision(obj1,obj2){
                 .multiplyScalar(impulse));
 
 
-                console.log(obj1.omega,obj2.omega);
+                console.log(collision.contact.box2.clone()
+                ,collision.normal);
         }
     }
 }
@@ -105,26 +106,24 @@ function cloideBox2Box(box1,box2){
     let minOverLap;
     let colideNormal;
     let colideClass;
-    let box1ContactPoint;
+    let box1ContactPoint;//FOR FUCK SAKE  fixx this shit
     let box2ContactPoint;
-
-    let ZERO = new THREE.Vector3(0,0,0);
 
     for(const normal of normSet1){
         if(normal.lengthSq() < 1e-12){
             continue;
         }
         let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
-        if(!result.overlap){
+        if(!result.collision.result){
             colide = false;
             return {colide:colide};
         }
-        if(minOverLap == undefined || result.val < minOverLap){
-            minOverLap = result.val;
+        if(minOverLap == undefined || result.collision.val < minOverLap){
+            minOverLap = result.collision.val;
             colideClass = 'box1 face box 2 vertex';
             colideNormal = normal;
-            box1ContactPoint = normal.clone().multiplyScalar(result.lenBox12P);
-            box2ContactPoint = normal.clone().multiplyScalar(result.lenBox22P);
+            box1ContactPoint = normal.clone().multiplyScalar(1);
+            box2ContactPoint = normal.clone().multiplyScalar(1);
         }
     }
 
@@ -133,16 +132,16 @@ function cloideBox2Box(box1,box2){
             continue;
         }
         let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
-        if(!result.overlap){
+        if(!result.collision.result){
             colide = false;
             return {colide:colide};
         }
-        if(minOverLap == undefined || result.val < minOverLap){
-            minOverLap = result.val;
+        if(minOverLap == undefined || result.collision.val < minOverLap){
+            minOverLap = result.collision.val;
             colideClass = 'box2 face box1 vertex';
             colideNormal = normal;
-            box1ContactPoint = normal.clone().multiplyScalar(result.lenBox12P);
-            box2ContactPoint = normal.clone().multiplyScalar(result.lenBox22P);
+            box1ContactPoint = normal.clone().multiplyScalar(1);
+            box2ContactPoint = normal.clone().multiplyScalar(1);
         }
     }
 
@@ -151,26 +150,66 @@ function cloideBox2Box(box1,box2){
             continue;
         }
         let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
-        if(!result.overlap){
+        if(!result.collision.result){
             colide = false;
             return {colide:colide};
         }
-        if(minOverLap == undefined || result.val < minOverLap){
-            minOverLap = result.val;
+        if(minOverLap == undefined || result.collision.val < minOverLap){
+            minOverLap = result.collision.val;
             colideClass = 'no vertex';
             colideNormal = normal;
-            box1ContactPoint = normal.clone().multiplyScalar(result.lenBox12P);
-            box2ContactPoint = normal.clone().multiplyScalar(result.lenBox22P);
+            box1ContactPoint = normal.clone().multiplyScalar(1);
+            box2ContactPoint = normal.clone().multiplyScalar(1);
         }
     }
     return {colide:colide,class:colideClass,normal:colideNormal,contact:{box1:box1ContactPoint,box2:box2ContactPoint}};
 }
 
+/*
+//TODO implemnt naivly JUST GET THIS SHIT WORKING FOR FUC SAKE
+function vertexFace(vertexObj,faceside){
+    contact point for vertexobj = vertexObj.minimal
+    contact point faceside = (-faceside.pos)+vertexObj.pos+ContactPOintRelativeVertexObj
+}//6 out if the 15 FUCK
+
+function EdgeToEdge(edge1obj,eg2obj){
+
+    edges
+    -edge1 ie normal obj
+        -maxD connect to next such that perpendicular
+    -edge2 ie -normal obj
+        -minD coonect ti next perpendictular
+
+
+    remove normal compaonet from all vertecys
+        - creates a line
+        - find over lap solution
+
+        ...somehow transform to cordinate system???
+                -use original 2 vectors to get cross prod
+        y=m1x+b1
+        y=m2x+b2
+        (m1-m2)x=b2-b2
+        x=(b2-b1)/(m1-m2)
+
+        recontruct n1*n1cord+n2*n2cord+normal*0.5peneratrion
+        add normal *0.5 penetration
+
+        first one from normal ppinting obj
+        contact point other2 = (-other2.pos)+other1.pos+other1.contactpoint relative
+
+    get closests eges 
+    project onto plane defined by colidion normal
+    set to middle plane thing
+
+    repeat and stuff
+}*/
+
 function overlapAlongNormal(shape1,shape2,unitNormal){
     let int1 = projectShape(shape1,unitNormal);
     let int2 = projectShape(shape2,unitNormal);
 
-    return intervalOverlap(int1,int2);
+    return {collision:intervalOverlap(int1.inter,int2.inter),contactInfo:{}};
 }
 
 function intervalOverlap(int1,int2){
@@ -186,22 +225,30 @@ function intervalOverlap(int1,int2){
         val = Math.min(Math.abs(dif1),Math.abs(dif2));
     }
 
-    return {overlap:overlap,val:val,lenBox12P:int1[1]-int1[0],lenBox22P:int2[0]-int2[1]};
+    return {result:overlap,val:val};
 }
 
 function projectShape(vert,unit){//projects shape onto unit vector
     if(vert.length == 0){
         return -1;
     }
-    let minD = vert[0].dot(unit);
-    let maxD = minD;
+    let minD;
+    let minV;
+    let maxD;
+    let maxV;
 
     for(const node of vert){
         let porjDist = node.dot(unit);
-        minD = Math.min(porjDist,minD);
-        maxD = Math.max(porjDist,maxD);
+        if(minD == undefined || minD >= porjDist){
+            minD = porjDist;
+            minV = node;
+        }
+        if(maxD == undefined || maxD <= porjDist){
+            maxD = porjDist;
+            maxV = node;
+        }
     }
-    return [minD,maxD];
+    return {inter:[minD,maxD],vert:[minV,maxV]};
 }
 
 
