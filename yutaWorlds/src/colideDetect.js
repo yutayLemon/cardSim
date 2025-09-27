@@ -114,18 +114,20 @@ function cloideBox2Box(box1,box2){
         if(normal.lengthSq() < 1e-12){
             continue;
         }
-       // let result = overlapAlongNormalVertFace()
-        let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
+        let result = overlapAlongNormalVertFace(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
+        //let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
         if(!result.collision.result){
             colide = false;
             return {colide:colide};
         }
+            console.log(result.contactInfo);
         if(minOverLap == undefined || result.collision.val < minOverLap){
             minOverLap = result.collision.val;
             colideClass = 'box1 face box 2 vertex';
             colideNormal = normal;
-            box1ContactPoint = normal.clone().multiplyScalar(1);
-            box2ContactPoint = normal.clone().multiplyScalar(1);
+            let contactVes = contactPointVertexFace(box2,box1,result.contactInfo.vert);
+            box1ContactPoint = contactVes.face;
+            box2ContactPoint = contactVes.vertex;
         }
     }
 
@@ -133,7 +135,8 @@ function cloideBox2Box(box1,box2){
         if(normal.lengthSq() < 1e-12){
             continue;
         }
-        let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
+        let result = overlapAlongNormalVertFace(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
+        //let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
         if(!result.collision.result){
             colide = false;
             return {colide:colide};
@@ -142,26 +145,45 @@ function cloideBox2Box(box1,box2){
             minOverLap = result.collision.val;
             colideClass = 'box2 face box1 vertex';
             colideNormal = normal;
-            box1ContactPoint = normal.clone().multiplyScalar(1);
-            box2ContactPoint = normal.clone().multiplyScalar(1);
+            console.log(result.contactInfo);
+            let contactVes = contactPointVertexFace(box1,box2,result.contactInfo.vert);
+
+            box1ContactPoint = contactVes.vertex;
+            box2ContactPoint = contactVes.face;
         }
     }
 
-    for(const normal of crossProdNormals){
+    for(let j = 0;j<normSet1.length;j++){
+        let norm1 = normSet1[j];
+        let norm2 = normSet2[j];
+        let normal = norm1.clone().cross(norm2);
+        //FUCKING FIGURE OUT SIGN DIR THE FUCK
+
         if(normal.lengthSq() < 1e-12){
             continue;
         }
-        let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
+        let result = overlapAlongNormalEdgeEdge(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
+        /*let result = contactPointEdegToEdge(
+            {edge:,obj:,srcNormal:},
+            {edge:,obj:,srcNormal:},
+            normal);*/
+        //let result = overlapAlongNormal(box1.verticeArrGlobal,box2.verticeArrGlobal,normal);
         if(!result.collision.result){
             colide = false;
             return {colide:colide};
         }
         if(minOverLap == undefined || result.collision.val < minOverLap){
+            let edgesStuff = contactPointEdegToEdge(
+            {edge:result.contactInfo.edge1,obj:box1,srcNormal:norm1},
+            {edge:result.contactInfo.edge2,obj:box2,srcNormal:norm2},
+            normal);
+
+
             minOverLap = result.collision.val;
             colideClass = 'no vertex';
             colideNormal = normal;
-            box1ContactPoint = normal.clone().multiplyScalar(1);
-            box2ContactPoint = normal.clone().multiplyScalar(1);
+            box1ContactPoint = edgesStuff.edge1;
+            box2ContactPoint = edgesStuff.edge2;
         }
     }
     return {colide:colide,class:colideClass,normal:colideNormal,contact:{box1:box1ContactPoint,box2:box2ContactPoint}};
@@ -179,7 +201,7 @@ function contactPointVertexFace(vertexObj,faceObj,peneratingVertex){
 }
 
 function contactPointEdegToEdge(obj1Info,obj2Info,normal){
-    //obj1Info .edeg    .obj   .srcNormal
+    //obj1Info .edge    .obj   .srcNormal
     //obj 1 is origin normal is pointing away from
     let n1 = obj1Info.srcNormal;
     let n2 = obj2Info.srcNormal;
@@ -345,7 +367,7 @@ function overlapAlongNormalVertFace(shape1,shape2,unitNormal){
     let int1 = projectShapeVert(shape1,unitNormal);
     let int2 = projectShapeVert(shape2,unitNormal);
 
-    return {collision:intervalOverlap(int1.inter,int2.inter),contactInfo:{face:shape1,vert:int2.minD}};
+    return {collision:intervalOverlap(int1.inter,int2.inter),contactInfo:{face:shape1,vert:int2.vert[0]}};
 }
 
 function overlapAlongNormalEdgeEdge(shape1,shape2,unitNormal){
