@@ -93,6 +93,7 @@ class boxObj{
             new THREE.Vector3(0,1,0),
             new THREE.Vector3(0,0,1)
         ];
+
         this.inertiaTensors = new THREE.Matrix3();
         this.inertiaTensors.set(
             (this.mass*(this.thickness*this.thickness+this.height*this.height))/12,0,0,
