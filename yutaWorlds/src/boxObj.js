@@ -1,38 +1,49 @@
 import * as THREE from 'three';
-import {addDebugPoint,updateDebug} from './debug.js'
-import {cloideBox2Box,resolveCollision,updateArrCollisions,resolveCollisionPlane} from './colideDetect.js'
+import {addDebugPoint,updateDebug,debugArrow} from './debug.js'
+import {resolveCollision} from './colideDetect.js'
+import {addOmega} from './colideMath.js';
 
 class boxObj{
     constructor(scene,size,cardRatio,thickRatio){
-        this.sizeFact = size;
+        this.width = size;
         this.cardRatio = cardRatio;
         this.thickRatio = thickRatio;
 
-        this.width = this.sizeFact;
-        this.height = this.sizeFact * this.cardRatio;
-        this.thickness = this.sizeFact * this.thickRatio;
+        this.height = this.width * this.cardRatio;
+        this.thickness = this.width * this.thickRatio;
 
         this.position = new THREE.Vector3(0,0,0);
 
-        this.force = new THREE.Vector3(0,0,0);
 
         this.mass = 1;
 
         this.color = 0x000000;
 
         this.torque = new THREE.Vector3(0,0,0);
+        this.force = new THREE.Vector3(0,0,0);
 
         this.eularRotation = new THREE.Euler(0,0,0);
-        this.rotationMatrx = new THREE.Matrix3(1,0,0,
+        this.rotationMatrx = new THREE.Matrix3(
+            1,0,0,
             0,1,0,
             0,0,1
         );
 
         this.omega = new THREE.Vector3(0,0,0);
-        this.angMomentum = new THREE.Vector3(0,0,0);
+        this.vel = new THREE.Vector3(0,0,0);
 
         this.acc = new THREE.Vector3(0,0,0);
-        this.vel = new THREE.Vector3(0,0,0);
+
+        this.angMomentum = new THREE.Vector3(0,0,0);
+
+        this.debugArrows = {
+            vel:new debugArrow(0xff0000,scene),
+            acc:new debugArrow(0x00ff00,scene),
+            contact:new debugArrow(0x0000ff,scene),
+            omega:new debugArrow(0xff00ff,scene),
+            impulse:new debugArrow(0xff00ff,scene),
+            angimplse:new debugArrow(0xff00ff,scene)
+        }
 
         this.scale = 1;
 
@@ -45,6 +56,7 @@ class boxObj{
         let offx = this.width*0.5;
         let offy = this.height*0.5;
         let offz = this.thickness*0.5;
+
         this.verticeArr = [new THREE.Vector3(offx,offy,offz),
                            new THREE.Vector3(offx,offy,-offz),
 
@@ -82,6 +94,7 @@ class boxObj{
             bottomRight:[this.verticeArrGlobal[4],this.verticeArrGlobal[5]],
             bottomLeft:[this.verticeArrGlobal[6],this.verticeArrGlobal[7]]
         }
+
         this.surfaceNormal = [
             new THREE.Vector3(1,0,0),
             new THREE.Vector3(0,1,0),
@@ -110,7 +123,7 @@ class boxObj{
         );
 
 
-        const boxGemo = new THREE.BoxGeometry(this.width , this.height , this.thickness);
+        const boxGemo = new THREE.BoxGeometry(this.width,this.height,this.thickness);
         const boxMet = new THREE.MeshStandardMaterial({
             color:this.color
         });
@@ -123,6 +136,15 @@ class boxObj{
         this.lastTick = 0;
 
         this.addToScene(scene);
+    }
+
+    updateArrows(){
+        this.debugArrows.acc.updateArrow(this.position,this.acc);
+        this.debugArrows.vel.updateArrow(this.position,this.vel);
+        this.debugArrows.contact.updateArrow(this.position);
+        this.debugArrows.omega.updateArrow(this.position,this.omega);
+        this.debugArrows.impulse.updateArrow(this.position);
+        this.debugArrows.angimplse.updateArrow(this.position);
     }
 
     updateColide(otherObj){
@@ -178,6 +200,8 @@ class boxObj{
         this.threeJsObj.scale.set(this.scale,this.scale,this.scale);
 
         this.threeJsObj.material.color.set(this.color);
+
+        this.updateArrows();
     }
 
     updatePosVel(h){
@@ -203,69 +227,6 @@ class boxObj{
         
         this.threeJsObj.position.copy(this.position);
         this.threeJsObj.rotation.copy(this.eularRotation);
-    }
-}
-
-function addOmega(matrix,omega){
-    let h = 1;
-    //addMatrx(matrix,crossColm(matrix,omega.clone().multiplyScalar(h)));
-    addMatrx(matrix,crossMatrix(omega).multiply(matrix));
-
-    const xCol = new THREE.Vector3();
-    const yCol = new THREE.Vector3();
-    const zCol = new THREE.Vector3();
-
-    matrix.extractBasis(xCol, yCol, zCol); 
-    xCol.normalize();
-    //yCol.normalize();
-    //zCol.normalize();
-    yCol.sub(xCol.clone().multiplyScalar(yCol.dot(xCol))).normalize();
-    zCol.crossVectors(xCol,yCol);
-    
-    matrix.set(
-    xCol.x, yCol.x, zCol.x,
-    xCol.y, yCol.y, zCol.y,
-    xCol.z, yCol.z, zCol.z
-  );
-
-}
-
-function crossMatrix(vect){
-  const result = new THREE.Matrix3();
-    result.set(
-        0,vect.z,vect.y,
-        vect.z,0,-vect.x,
-        -vect.y,vect.x,0
-    );
-    return result;
-}
-
-
-function crossColm(matrix,vect){
-  const result = new THREE.Matrix3();
-
-  const col0 = new THREE.Vector3();
-  const col1 = new THREE.Vector3();
-  const col2 = new THREE.Vector3();
-
-  matrix.extractBasis(col0, col1, col2);   
-
-  col0.cross(vect);
-  col1.cross(vect);
-  col2.cross(vect);
-
-  result.set(
-    col0.x, col1.x, col2.x,
-    col0.y, col1.y, col2.y,
-    col0.z, col1.z, col2.z
-  );
-
-  return result;
-}
-
-function addMatrx(subject,Matrix){
-    for(let i = 0;i<3*3;i++){
-        subject.elements[i] += Matrix.elements[i];
     }
 }
 
