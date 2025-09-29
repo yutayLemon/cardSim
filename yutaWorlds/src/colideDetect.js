@@ -23,6 +23,14 @@ function distFromPlaneSqu(normal,planePoint,points){
     return p;
 }
 
+function updateArrCollisions(arr){
+    for(let i = 0;i<arr.length;i++){
+        for(let j = 0;j<i;j++){
+            arr[i].updateColide(arr[j]);
+        }
+    }
+}
+
 function resolveCollision(obj1,obj2){
     let collision = cloideBox2Box(obj1,obj2);
 
@@ -58,15 +66,8 @@ function resolveCollisionPlane(plane,obj){
         }
 }
 
-function updateArrCollisions(arr){
-    for(let i = 0;i<arr.length;i++){
-        for(let j = 0;j<i;j++){
-            arr[i].updateColide(arr[j]);
-        }
-    }
-}
-
 function cloideBox2Box(box1,box2){
+    console.log(box1,box2);
     let normSet1 = box1.globalSurfaceNormal;
     let normSet2 = box2.globalSurfaceNormal;
 
@@ -159,7 +160,7 @@ function testEdgeToEdge(box1,box2,normSet1,normSet2,minimumInfo){
         if(normal.lengthSq() < 1e-12){
             continue;
         }
-        let res = overlapAlongNormalEdgeEdge(box1,box2,normal,box1.planeP[0]);
+        let res = overlapAlongNormalEdgeEdge(box1,box2,box1.planeP[0],norm2,norm1);
         if(!res.collision.result){
             return {colide:false};
         }
@@ -179,11 +180,12 @@ function testEdgeToEdge(box1,box2,normSet1,normSet2,minimumInfo){
             contactP2 = edgeContact.edge2;
         }
 
-        res = overlapAlongNormalEdgeEdge(box1,box2,normal,box1.planeP[1]);
+        res = overlapAlongNormalEdgeEdge(box1,box2,box1.planeP[1],norm2,norm1);
         if(!res.collision.result){
             return {colide:false};
         }
         if(minimumInfo.overlap == undefined || res.collision.val < minimumInfo.overlap){
+            console.log(res);
             let edgeContact = contactPointEdegToEdge(
                 box1,
                 box2,
@@ -247,7 +249,7 @@ function overlapAlongNormalVertFace(shape1,shape2,unitNormal,planePoint){
     
     //normal along face of shape1
     let newNorm = unitNormal.clone();
-    if(planePoint.clone().sub(shape2.position).dot(unitNormal) < 0){
+    if(planePoint.clone().sub(shape1.position).dot(unitNormal) < 0){
         newNorm.multiplyScalar(-1);
     }
     let int1 = projectShapeVert(shape1.verticeArrGlobal,newNorm,planePoint);
@@ -257,19 +259,19 @@ function overlapAlongNormalVertFace(shape1,shape2,unitNormal,planePoint){
     return {collision:intervalOverlap(int1.inter,int2.inter),contactInfo:{face:shape1,vert:int2.vert[1]}};
 }
 
-function overlapAlongNormalEdgeEdge(shape1,shape2,unitNormal,planePoint){
-    let newNorm = unitNormal.clone();
-    if(planePoint.clone().sub(shape1.position).dot(unitNormal) < 0){
+function overlapAlongNormalEdgeEdge(shape1,shape2,planePoint,srcNormal1,srcNormal2){
+    //select correct plane point FUCK
+    let newNorm = new THREE.Vector3().crossVectors(srcNormal1,srcNormal2);
+    newNorm.normalize();
+    if(planePoint.clone().sub(shape1.position).dot(newNorm) < 0){
         newNorm.multiplyScalar(-1);
     }
     let int1 = projectShapeVert(shape1.verticeArrGlobal,newNorm,planePoint);
     let int2 = projectShapeVert(shape2.verticeArrGlobal,newNorm,planePoint);
         //TODO add direction resolveer
-
-
         //TODO cheak direction
-    let edge1Max = [int1.vert[1],findEdgeEnd(int1.vert[1],shape1.verticeArrGlobal,newNorm)];
-    let edge2Min = [int2.vert[0],findEdgeEnd(int2.vert[0],shape2.verticeArrGlobal,newNorm)];
+    let edge1Max = [int1.vert[1],findEdgeEnd(int1.vert[1],shape1.verticeArrGlobal,srcNormal1)];
+    let edge2Min = [int2.vert[0],findEdgeEnd(int2.vert[0],shape2.verticeArrGlobal,srcNormal2)];
 
     return {collision:intervalOverlap(int1.inter,int2.inter),contactInfo:{edge1:edge1Max,edge2:edge2Min}};
 }
@@ -291,13 +293,14 @@ function intervalOverlap(int1,int2){
 
 function findEdgeEnd(start,vertexs,normal){
     //find node forming start-node edge perpendiclar to normal
-    for(let i = 0;i<vertexs.length;i++){
-        if(start.clone().sub(vertexs[i]).dot(normal) < 1e-12){
-            return vertexs[i];
+    for(const node of vertexs){
+        if(start.clone().sub(node).dot(normal) < 1e-12){
+            return node;
         }
     }
     return -1;
 }
+
 
 
 function projectShapeVert(vert,unit,planePoint){//projects shape onto unit vector
