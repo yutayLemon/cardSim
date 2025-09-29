@@ -107,6 +107,26 @@ class boxObj{
             new THREE.Vector3(0,0,1)
         ];
 
+        this.edges = [
+            [this.verticeArrGlobal[0],this.verticeArrGlobal[1]],
+            [this.verticeArrGlobal[0],this.verticeArrGlobal[2]],
+            [this.verticeArrGlobal[0],this.verticeArrGlobal[4]],
+            [this.verticeArrGlobal[1],this.verticeArrGlobal[3]],
+            [this.verticeArrGlobal[1],this.verticeArrGlobal[5]],
+            [this.verticeArrGlobal[2],this.verticeArrGlobal[3]],
+            [this.verticeArrGlobal[2],this.verticeArrGlobal[6]],
+            [this.verticeArrGlobal[3],this.verticeArrGlobal[7]],
+            [this.verticeArrGlobal[4],this.verticeArrGlobal[5]],
+            [this.verticeArrGlobal[4],this.verticeArrGlobal[6]],
+            [this.verticeArrGlobal[6],this.verticeArrGlobal[7]],
+            [this.verticeArrGlobal[7],this.verticeArrGlobal[5]]
+        ];
+
+        this.planeP = [
+            this.verticeArrGlobal[1],
+            this.verticeArrGlobal[6]
+        ];
+        
         this.inertiaTensors = new THREE.Matrix3();
         this.inertiaTensors.set(
             (this.mass*(this.thickness*this.thickness+this.height*this.height))/12,0,0,
