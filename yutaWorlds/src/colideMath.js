@@ -4,23 +4,53 @@ import * as THREE from 'three';
 //solve n1,n2 intersection and interpolate for z
 //global cords
 function solveLinear(line1,line2){
-    let m1 = (line1[0].y-line1[1].y)/(line1[0].x-line1[1].x);
-    let m2 = (line2[0].y-line2[1].y)/(line2[0].x-line2[1].x);
+    //assumed intersection on x,y plane
+    /*
+    Ix = line1[0].x + (line1[1].x-line1[0].x)*t = line2[0].x + (line2[1].x-line2[0].x)*u
+    Iy = line1[0].y + (line1[1].y-line1[0].y)*t = line2[0].y + (line2[1].y-line2[0].y)*u
 
-    let b1 = line1[0].y-m1*line1[0].x;
-    let b2 = line2[0].y-m2*line2[0].x;
+    Ix = (line1[0].x - line2[0].x) + (line1[1].x-line1[0].x)*t = (line2[1].x-line2[0].x)*u
+    Iy = (line1[0].y - line2[0].y) + (line1[1].y-line1[0].y)*t = (line2[1].y-line2[0].y)*u
 
-    let xCord = (b2-b1)/(m1-m2);
+    Ix = (line1[1].x-line1[0].x)*t = (line2[1].x-line2[0].x)*u - (line1[0].x - line2[0].x)
+    Iy = (line1[1].y-line1[0].y)(line2[1].x-line2[0].x)*u - (line1[1].y-line1[0].y)(line1[0].x - line2[0].x) = (line2[1].y-line2[0].y)(line1[1].x-line1[0].x)*u - (line1[0].y - line2[0].y)(line1[1].x-line1[0].x)
+    Iy = (line1[1].y-line1[0].y)(line2[1].x-line2[0].x)*u -(line2[1].y-line2[0].y)(line1[1].x-line1[0].x)*u = - (line1[0].y - line2[0].y)(line1[1].x-line1[0].x) + (line1[1].y-line1[0].y)(line1[0].x - line2[0].x)
+    (line1[0].x - line2[0].x)(line1[1].y-line1[0].y)-(line1[0].y - line2[0].y)(line1[1].x-line1[0].x);
+    /
+    (line1[1].y-line1[0].y)(line2[1].x-line2[0].x) -(line2[1].y-line2[0].y)(line1[1].x-line1[0].x)
 
-    let yCord = xCord * m1 +b1;
+    Ix = (line1[0].x - line2[0].x) + (line1[1].x-line1[0].x)*t = (line2[1].x-line2[0].x)*u
+    Iy = (line2[1].x-line2[0].x)(line1[0].y - line2[0].y) + (line2[1].x-line2[0].x)(line1[1].y-line1[0].y)*t = (line2[1].x-line2[0].x)(line2[1].y-line2[0].y)*u
 
-    let xRatio1 = (xCord - line1[0].x)/(line1[1].x-line1[0].x);
-    let xRatio2 = (xCord - line2[0].x)/(line2[1].x-line2[0].x);
+    Iy = (line2[1].x-line2[0].x)(line1[0].y - line2[0].y) + (line2[1].x-line2[0].x)(line1[1].y-line1[0].y)*t = (line2[1].y-line2[0].y)(line1[0].x - line2[0].x) + (line2[1].y-line2[0].y)(line1[1].x-line1[0].x)*t
+
+    line1[0] A;
+    line1[1] B;
+    line2[0] C;
+    line2[1] D;
+    (line2[1].x-line2[0].x)(line1[0].y - line2[0].y)-(line2[1].y-line2[0].y)(line1[0].x - line2[0].x)
+    /
+    (line2[1].y-line2[0].y)(line1[1].x-line1[0].x)-(line2[1].x-line2[0].x)(line1[1].y-line1[0].y)
+*/
+    let topt = (line2[1].x-line2[0].x)*(line1[0].y - line2[0].y)-(line2[1].y-line2[0].y)*(line1[0].x - line2[0].x);
+    let bottomt = (line2[1].y-line2[0].y)*(line1[1].x-line1[0].x)-(line2[1].x-line2[0].x)*(line1[1].y-line1[0].y);
+
+    let topu = (line1[0].x - line2[0].x)*(line1[1].y-line1[0].y)-(line1[0].y - line2[0].y)*(line1[1].x-line1[0].x);
+    let bottomu = (line1[1].y-line1[0].y)*(line2[1].x-line2[0].x) -(line2[1].y-line2[0].y)*(line1[1].x-line1[0].x);
+    
+    let t = topt/bottomt;
+    let u = topu/bottomu;
+    let xCord = line1[0].x + (line1[1].x-line1[0].x)*t;
+    let yCord = line1[0].y + (line1[1].y-line1[0].y)*t;
+
+    //TODOOOOO
+    let xRatio1 = t;
+    let xRatio2 = u;
     //ratio how how far the intersection is
 
     let zCrod1 = line1[0].z + (line1[1].z-line1[0].z)*xRatio1;
     let zCrod2 = line2[0].z + (line2[1].z-line2[0].z)*xRatio2;
-
+    
     return {contactP1:{x:xCord,y:yCord,z:zCrod1},contactP2:{x:xCord,y:yCord,z:zCrod2}};
 }
 

@@ -67,7 +67,7 @@ function resolveCollisionPlane(plane,obj){
 }
 
 function cloideBox2Box(box1,box2){
-    console.log(box1,box2);
+    //console.log(box1,box2);
     let normSet1 = box1.globalSurfaceNormal;
     let normSet2 = box2.globalSurfaceNormal;
 
@@ -149,6 +149,7 @@ function testEdgeToEdge(box1,box2,normSet1,normSet2,minimumInfo){
 
     let contactP1;
     let contactP2;
+    let contactP = {p1:undefined,p2:undefined};
     for(let i = 0;i<normSet1.length;i++){
     for(let j = 0;j<normSet2.length;j++){
         let norm1 = normSet1[i];
@@ -160,29 +161,28 @@ function testEdgeToEdge(box1,box2,normSet1,normSet2,minimumInfo){
         if(normal.lengthSq() < 1e-12){
             continue;
         }
-        let res = overlapAlongNormalEdgeEdge(box1,box2,box1.planeP[0],norm2,norm1);
-        if(!res.collision.result){
+
+
+        //fix up plane point
+        
+        let res1 = testOneEdge(box1,box2,box1.planeP[0],norm1,norm2,normal,minimumInfo,contactP);
+        if(!res1){
             return {colide:false};
         }
-        if(minimumInfo.overlap == undefined || res.collision.val < minimumInfo.overlap){
-            let edgeContact = contactPointEdegToEdge(
-                box1,
-                box2,
-                {obj1:res.contactInfo.edge1,obj2:res.contactInfo.edge2},
-                {src1:norm1,src2:norm2,norm:normal});
-            
-
-            
-            minimumInfo.overlap = res.collision.val;
-            //'edege to edeg'
-            minimumInfo.collisionNormal = normal;
-            contactP1 = edgeContact.edge1;
-            contactP2 = edgeContact.edge2;
-        }
-
-        res = overlapAlongNormalEdgeEdge(box1,box2,box1.planeP[1],norm2,norm1);
-        if(!res.collision.result){
+        let res2 = testOneEdge(box1,box2,box1.planeP[1],norm1,norm2,normal,minimumInfo,contactP);
+        if(!res1){
             return {colide:false};
+        }
+    }
+    }
+
+    return {colide:true,contactP1:contactP.p1,contactP2:contactP.p2};
+}
+
+function testOneEdge(box1,box2,planePoint,norm1,norm2,normal,minimumInfo,contactP){
+        let res = overlapAlongNormalEdgeEdge(box1,box2,planePoint,norm2,norm1);
+        if(!res.collision.result){
+            return false;
         }
         if(minimumInfo.overlap == undefined || res.collision.val < minimumInfo.overlap){
             console.log(res);
@@ -197,12 +197,10 @@ function testEdgeToEdge(box1,box2,normSet1,normSet2,minimumInfo){
             minimumInfo.overlap = res.collision.val;
             //'edege to edeg'
             minimumInfo.collisionNormal = normal;
-            contactP1 = edgeContact.edge1;
-            contactP2 = edgeContact.edge2;
+            contactP.p1 = edgeContact.edge1;
+            contactP.p2 = edgeContact.edge2;
         }
-    }
-    }
-    return {colide:true,contactP1:contactP1,contactP2:contactP2};
+        return true;
 }
 
 //TODO FUCCCK RELATIVE CONTAT POINT FLIPED
@@ -233,11 +231,12 @@ function contactPointEdegToEdge(obj1,obj2,edges,normals){
     line2.push(transformToCordinate(edges.obj2[1],n1,n2,normals.norm));
     //x:srcNormal1
     //y:srcNormal2
-
+    console.log("line",line1,line2);
     let globalContactPoints = solveLinear(line1,line2);
+    console.log("G",globalContactPoints);
     let contP1 = reConstruct(globalContactPoints.contactP1,n1,n2,normals.norm);
     let contP2 = reConstruct(globalContactPoints.contactP2,n1,n2,normals.norm);
-
+    console.log("contpPreSub",contP1,contP2);
     contP1.sub(obj1.position);
     contP2.sub(obj2.position);
 
@@ -270,8 +269,8 @@ function overlapAlongNormalEdgeEdge(shape1,shape2,planePoint,srcNormal1,srcNorma
     let int2 = projectShapeVert(shape2.verticeArrGlobal,newNorm,planePoint);
         //TODO add direction resolveer
         //TODO cheak direction
-    let edge1Max = [int1.vert[1],findEdgeEnd(int1.vert[1],shape1.verticeArrGlobal,srcNormal1)];
-    let edge2Min = [int2.vert[0],findEdgeEnd(int2.vert[0],shape2.verticeArrGlobal,srcNormal2)];
+    let edge1Max = [int1.vert[0],findEdgeEnd(int1.vert[0],shape1.verticeArrGlobal,newNorm)];
+    let edge2Min = [int2.vert[1],findEdgeEnd(int2.vert[1],shape2.verticeArrGlobal,newNorm)];
 
     return {collision:intervalOverlap(int1.inter,int2.inter),contactInfo:{edge1:edge1Max,edge2:edge2Min}};
 }
@@ -290,16 +289,36 @@ function intervalOverlap(int1,int2){
     }
 }
 
+function findEdgeEnd(start, vertexs, normal) {
+    for (const node of vertexs) {
+        let difVect = start.clone().sub(node);
 
-function findEdgeEnd(start,vertexs,normal){
-    //find node forming start-node edge perpendiclar to normal
-    for(const node of vertexs){
-        if(start.clone().sub(node).dot(normal) < 1e-12){
-            return node;
+        if (difVect.lengthSq() < 1e-24) continue; // same vector
+
+        let dot = difVect.dot(normal);
+        if (Math.abs(dot) < 1e-12) {
+            return node; // perpendicular
         }
     }
     return -1;
 }
+/*
+
+function findEdgeEnd(start,vertexs,normal){
+    //find node forming start-node edge perpendiclar to normal
+    for(const node of vertexs){
+        let difVect = start.clone().sub(node);
+        if(difVect.x < 1e-12 && difVect.y < 1e-12 && difVect.z < 1e-12){//same vector
+            continue;
+        }
+        difVect.cross(normal);
+        console.log(difVect,"FUCK");
+        if(difVect.x < 1e-12 && difVect.y < 1e-12 && difVect.z < 1e-12){
+            return node;
+        }
+    }
+    return -1;
+}*/
 
 
 
