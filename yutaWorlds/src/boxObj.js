@@ -42,7 +42,8 @@ class boxObj{
             contact:new debugArrow(0x0000ff,scene),
             omega:new debugArrow(0xff00ff,scene),
             impulse:new debugArrow(0xff00ff,scene),
-            angimplse:new debugArrow(0xff00ff,scene)
+            angimplse:new debugArrow(0xff00ff,scene),
+            coliNorm:new debugArrow(0x777777,scene)
         }
 
         this.scale = 1;
@@ -126,7 +127,7 @@ class boxObj{
             this.verticeArrGlobal[1],
             this.verticeArrGlobal[6]
         ];
-        
+
         this.inertiaTensors = new THREE.Matrix3();
         this.inertiaTensors.set(
             (this.mass*(this.thickness*this.thickness+this.height*this.height))/12,0,0,
@@ -165,6 +166,7 @@ class boxObj{
         this.debugArrows.omega.updateArrow(this.position,this.omega);
         this.debugArrows.impulse.updateArrow(this.position);
         this.debugArrows.angimplse.updateArrow(this.position);
+        this.debugArrows.coliNorm.updateArrow(this.coliNorm);
     }
 
     updateColide(otherObj){

@@ -12,13 +12,16 @@ window.simPause = false;
 initKeyInput();
 initDebug(scene);
 //WTF
-        const euler = new THREE.Euler(Math.PI*0.25, Math.PI*0.25, 0, 'XYZ');
-        //const euler = new THREE.Euler( Math.PI*0.25,0, 0, 'XYZ');
+//        const euler = new THREE.Euler(Math.PI*0.25, Math.PI*0.25, 0, 'XYZ');
+//        const euler = new THREE.Euler( Math.PI*0.25,0, 0, 'XYZ');
+const euler = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math.random()*Math.PI, 'XYZ');
+
         const rotationMatrix4 = new THREE.Matrix4().makeRotationFromEuler(euler);
         const rotationMatrix3 = new THREE.Matrix3().setFromMatrix4(rotationMatrix4);
 
-const euler1 = new THREE.Euler(-Math.PI*0.15,0, 0, 'XYZ');
+//const euler1 = new THREE.Euler(-Math.PI*0.15,0, 0, 'XYZ');
 //const euler1 = new THREE.Euler(0,0, 0, 'XYZ');
+const euler1 = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math.random()*Math.PI, 'XYZ');
         const rotationMatrix41 = new THREE.Matrix4().makeRotationFromEuler(euler1);
         const rotationMatrix31 = new THREE.Matrix3().setFromMatrix4(rotationMatrix41);
 
@@ -82,7 +85,7 @@ function prossesCollisions(){
     }
 
     //let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
-    let objs = cards.concat([player]);//.concat([floor]);//TODO DEBUGGG
+    let objs = cards;//.concat([player]).concat([floor]);//TODO DEBUGGG
     updateArrCollisions(objs);//TODO think about placement
 }
 

@@ -85,4 +85,44 @@ class debugArrow{
         this.THREEArrow.setLength(this.len);
     }
 }
-export {updateDebug,initDebug,debugVertex,addDebugPoint,debugP,debugArrow}
+
+
+function debugPrintContact(box1,box2,box1Cont,box2Cont,minimumInfo){
+    let str = '';
+    str += stringBox(box1,"box1");
+    str += stringBox(box2,"box2");
+
+    str += stringCords(box1Cont.clone().add(box1.position),"C","box1");
+    str += stringCords(box2Cont.clone().add(box2.position),"C","box2");
+
+    str += "#" + minimumInfo.class+'\n';
+
+    return str;
+}
+
+function debugPrintEdge(edge,sub){
+    let str = '';
+    str += stringCords(edge[0],"e",sub+"1");
+    str += stringCords(edge[1],"e",sub+"2");
+
+    str += '(e_{'+sub+'2}.x+(e_{'+sub+'1}.x-e_{'+sub+'2}.x)*t,e_{'+sub+'2}.y+(e_{'+sub+'1}.y-e_{'+sub+'2}.y)*t,e_{'+sub+'2}.z+(e_{'+sub+'1}.z-e_{'+sub+'2}.z)*t)';
+
+    return str;
+}
+
+function stringBox(box,id){
+    let str = '';
+    let vertexs = box.verticeArrGlobal;
+    for(let i = 0;i<vertexs.length;i++){
+        str += stringCords(vertexs[i],'P',id+'i'+i);
+    }
+    str += stringCords(box.position,"O",id);
+    return str;
+}
+function stringCords(cord,nam,sub){
+    return nam+'_{'+sub+'}=('+cord.x+','+cord.z+','+cord.y+')\n';
+}
+
+
+
+export {updateDebug,initDebug,debugVertex,addDebugPoint,debugP,debugArrow,debugPrintContact,debugPrintEdge}
