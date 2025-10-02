@@ -21,7 +21,6 @@ function resolveCollision(obj1,obj2){
         if(isNaN(impulse.val)){
         }else{
 
-            //FIX FUCKING COLISION NORMAL DIRECTIONS
                 applyImpulse(obj1,obj2,collision,impulse.val);
 
                 obj1.debugArrows.contact.dir.set(collision.contact.box1.x,collision.contact.box1.y,collision.contact.box1.z);
