@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {solveLinear,transformToCordinate,reConstruct,getImpulse} from './colideMath.js'
+import {solveLinear,transformToCordinate,reConstruct,getImpulse,applyImpulse} from './colideMath.js'
 import {debugPrintContact,debugPrintEdge} from './debug.js'
 
 function updateArrCollisions(arr){
@@ -22,18 +22,7 @@ function resolveCollision(obj1,obj2){
         }else{
 
             //FIX FUCKING COLISION NORMAL DIRECTIONS
-                obj1.vel.sub(collision.normal.clone().multiplyScalar(impulse.val/obj1.mass));
-                obj2.vel.add(collision.normal.clone().multiplyScalar(impulse.val/obj2.mass));
-
-                obj1.omega.sub(collision.contact.box1.clone()
-                .cross(collision.normal)
-                .applyMatrix3(obj1.inertiaTensorInverse)
-                .multiplyScalar(impulse.val));
-                
-                obj2.omega.add(collision.contact.box2.clone()
-                .cross(collision.normal)
-                .applyMatrix3(obj2.inertiaTensorInverse)
-                .multiplyScalar(impulse.val));
+                applyImpulse(obj1,obj2,collision,impulse.val);
 
                 obj1.debugArrows.contact.dir.set(collision.contact.box1.x,collision.contact.box1.y,collision.contact.box1.z);
                 obj1.debugArrows.contact.len = 15;

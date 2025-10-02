@@ -82,32 +82,31 @@ function addMatrx(subject,Matrix){
 
 function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is unit
 
-    //TO DO CHEAK
-    //sepetaing test failing.... FUCK
-    if(obj1.position.clone().sub(obj2.position).dot(collision.normal)){
+    collision.normal.normalize();
+    if(obj2.position.clone().sub(obj1.position).dot(collision.normal) < 0){
         collision.normal.multiplyScalar(-1);
     }
 
-    let velp1 = obj1.vel.clone().add(obj1.omega.clone().cross(collision.contact.box1));
-    let velp2 = obj2.vel.clone().add(obj2.omega.clone().cross(collision.contact.box2));
+    let velp1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega,collision.contact.box1));
+    let velp2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega,collision.contact.box2));
 
     let relativeVel = velp2.clone().sub(velp1);
 
     let relativeAlongN = relativeVel.dot(collision.normal);
+    // -> <-
+    // <- <- neg
 
-    if(relativeAlongN < 0){
+    if(relativeAlongN > 0){
         return {fail:true};
     }
 
-    let impulse = collision.normal.dot(relativeVel.clone().multiplyScalar((-1)*eFact-1));
+    let impulse = collision.normal.dot(relativeVel.clone().multiplyScalar((-1)*(eFact+1)));
 
-    let impInvRcrossR1 = collision.contact.box1.clone();
-    impInvRcrossR1.cross(collision.normal);
+    let impInvRcrossR1 = new THREE.Vector3().crossVectors(collision.contact.box1,collision.normal);
     impInvRcrossR1.cross(collision.contact.box1);
     impInvRcrossR1.applyMatrix3(obj1.inertiaTensorInverse);
 
-    let impInvRcrossR2 = collision.contact.box2.clone();
-    impInvRcrossR2.cross(collision.normal);
+    let impInvRcrossR2 = new THREE.Vector3().crossVectors(collision.contact.box2,collision.normal);
     impInvRcrossR2.cross(collision.contact.box2);
     impInvRcrossR2.applyMatrix3(obj2.inertiaTensorInverse);
 
@@ -119,6 +118,24 @@ function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is
     den += collision.normal.dot(impInvRcrossR2);
 
     return {fail:false,val:impulse/den};
+}
+
+
+function applyImpulse(obj1,obj2,collision,impulse){
+    
+    obj1.vel.sub(collision.normal.clone().multiplyScalar(impulse/obj1.mass));
+    obj2.vel.add(collision.normal.clone().multiplyScalar(impulse/obj2.mass));
+
+    let deltaOmega1 = new THREE.Vector3().crossVectors(collision.contact.box1,collision.normal);
+    deltaOmega1.applyMatrix3(obj1.inertiaTensorInverse)
+               .multiplyScalar(impulse);
+
+    let deltaOmega2 = new THREE.Vector3().crossVectors(collision.contact.box2,collision.normal);
+    deltaOmega2.applyMatrix3(obj2.inertiaTensorInverse)
+               .multiplyScalar(impulse);
+
+    obj1.omega.sub(deltaOmega1);
+    obj2.omega.add(deltaOmega2);
 }
 
 function distFromPlaneSqu(normal,planePoint,points){
@@ -140,4 +157,4 @@ function distFromPlaneSqu(normal,planePoint,points){
 
 
 
-export {solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse}
+export {solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse,applyImpulse}
