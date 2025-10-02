@@ -15,30 +15,54 @@ function resolveCollision(obj1,obj2){
 
         if(collision.colide){
             let impulse = getImpulse(obj1,obj2,1,collision);
-            if(impulse.fail){
+            if(impulse.fail || isNaN(impulse.val)){
                 return;
             }
-        if(isNaN(impulse.val)){
-        }else{
+            applyImpulse(obj1,obj2,collision,impulse.val);
 
-                applyImpulse(obj1,obj2,collision,impulse.val);
-
-                obj1.debugArrows.contact.dir.set(collision.contact.box1.x,collision.contact.box1.y,collision.contact.box1.z);
-                obj1.debugArrows.contact.len = 15;
-                obj2.debugArrows.contact.len = 15;
-                obj2.debugArrows.contact.dir.set(collision.contact.box2.x,collision.contact.box2.y,collision.contact.box2.z);
-                obj2.debugArrows.coliNorm.dir.set(collision.normal.x,collision.normal.y,collision.normal.z);
-                obj2.debugArrows.coliNorm.len = 20;
+            obj1.debugArrows.contact.dir.set(collision.contact.box1.x,collision.contact.box1.y,collision.contact.box1.z);
+            obj1.debugArrows.contact.len = 15;
+            obj2.debugArrows.contact.len = 15;
+            obj2.debugArrows.contact.dir.set(collision.contact.box2.x,collision.contact.box2.y,collision.contact.box2.z);
+            obj2.debugArrows.coliNorm.dir.set(collision.normal.x,collision.normal.y,collision.normal.z);
+            obj2.debugArrows.coliNorm.len = 20;
         }
     }
-    return;
+
+
+    //TODO fix ,set inertia values
+function resolveCollisionPlane(plane,obj){
+        let collision = colideBoxPlane(plane,obj);
+        plane.mass = Infinity;
+        plane.vel.set(0,0,0);
+
+        if(collision.colide){
+            let impulse = getImpulse(plane,obj,1,collision);
+            if(!isNaN(impulse.val) && !impulse.fail){
+                applyImpulse(plane,obj,collision,impulse.val);
+            }   
+        }
+        return;
 }
 
-function resolveCollisionPlane(plane,obj){
-        let collision = cloideBox2Box(plane,obj);
-        if(collision.colide){
-                obj.vel.sub(plane.globalSurfaceNormal[1].clone().multiplyScalar(obj.vel.dot(plane.globalSurfaceNormal[1])));
+function colideBoxPlane(plane,box){
+    let minDep = Infinity;
+    let minVer;
+    let norm = plane.globalSurfaceNormal[0];
+    for(const node of box.verticeArrGlobal){
+        let dist = plane.position.clone().sub(node).dot(norm);
+        if(dist < minDep){
+            minDep = dist;
+            minVer = node;
         }
+    }
+    let box1PlaneCont = minVer.clone().sub(plane.position);
+    let box2Cont = minVer.clone().sub(box.position);
+    if(minDep <= 0){
+        return {colide:true,normal:norm,contact:{box1:box1PlaneCont,box2:box2Cont}};
+    }else{
+        return {colide:false};
+    }
 }
 
 function cloideBox2Box(box1,box2){

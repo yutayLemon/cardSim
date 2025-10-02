@@ -141,9 +141,16 @@ class approxPlane extends boxObj{
         super(scene,size,0.001,1);
         this.name = "plane";
         this.color = 0xffffff;
-        this.mass = 1000;
-
         this.restitutionFactor = 1;
+        this.position.set(0,0,0);
+        this.mass = Infinity;
+
+        this.surfaceNormal = [
+            new THREE.Vector3(0,1,0)
+        ];
+
+        this.calcInertia();
+
     }
     updateColide(otherObj){
         resolveCollisionPlane(this,otherObj);

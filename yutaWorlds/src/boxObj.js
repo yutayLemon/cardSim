@@ -108,40 +108,15 @@ class boxObj{
             new THREE.Vector3(0,0,1)
         ];
 
-        this.edges = [
-            [this.verticeArrGlobal[0],this.verticeArrGlobal[1]],
-            [this.verticeArrGlobal[0],this.verticeArrGlobal[2]],
-            [this.verticeArrGlobal[0],this.verticeArrGlobal[4]],
-            [this.verticeArrGlobal[1],this.verticeArrGlobal[3]],
-            [this.verticeArrGlobal[1],this.verticeArrGlobal[5]],
-            [this.verticeArrGlobal[2],this.verticeArrGlobal[3]],
-            [this.verticeArrGlobal[2],this.verticeArrGlobal[6]],
-            [this.verticeArrGlobal[3],this.verticeArrGlobal[7]],
-            [this.verticeArrGlobal[4],this.verticeArrGlobal[5]],
-            [this.verticeArrGlobal[4],this.verticeArrGlobal[6]],
-            [this.verticeArrGlobal[6],this.verticeArrGlobal[7]],
-            [this.verticeArrGlobal[7],this.verticeArrGlobal[5]]
-        ];
-
         this.planeP = [
             this.verticeArrGlobal[1],
             this.verticeArrGlobal[6]
         ];
 
         this.inertiaTensors = new THREE.Matrix3();
-        this.inertiaTensors.set(
-            (this.mass*(this.thickness*this.thickness+this.height*this.height))/12,0,0,
-            0,(this.mass*(this.thickness*this.thickness+this.width*this.width))/12,0,
-            0,0,(this.mass*(this.width*this.width+this.height*this.height))/12
-        );
-
         this.inertiaTensorInverse = new THREE.Matrix3();
         
-        this.inertiaTensorInverse.set(
-            1/this.inertiaTensors.elements[0],0,0,
-            0,1/this.inertiaTensors.elements[4],0,
-            0,0,1/this.inertiaTensors.elements[8]
-        );
+        this.calcInertia();
 
 
         const boxGemo = new THREE.BoxGeometry(this.width,this.height,this.thickness);
@@ -157,6 +132,20 @@ class boxObj{
         this.lastTick = 0;
 
         this.addToScene(scene);
+    }
+    
+    calcInertia(){
+        this.inertiaTensors.set(
+            (this.mass*(this.thickness*this.thickness+this.height*this.height))/12,0,0,
+            0,(this.mass*(this.thickness*this.thickness+this.width*this.width))/12,0,
+            0,0,(this.mass*(this.width*this.width+this.height*this.height))/12
+        );
+        
+        this.inertiaTensorInverse.set(
+            1/this.inertiaTensors.elements[0],0,0,
+            0,1/this.inertiaTensors.elements[4],0,
+            0,0,1/this.inertiaTensors.elements[8]
+        );
     }
 
     updateArrows(){
@@ -227,20 +216,15 @@ class boxObj{
     }
 
     updatePosVel(h){
-
-
-        //TODO FIX THIS FUCKER
         this.position.add(this.vel.clone().multiplyScalar(h));
         ///update omega from impulse
         //this.omega = this.rotationMatrx*this.inertiaTensorInverse*this.rotationMatrx^T*this.angMomentum;
         
+        /*
         let globInertia = new THREE.Matrix3()
         .multiplyMatrices(this.rotationMatrx.clone(),this.inertiaTensorInverse)
         .multiply(this.rotationMatrx.clone().transpose());
-           // console.log(this.rotationMatrx.clone().transpose(),this.inertiaTensorInverse);
-        //this.omega.copy(this.angMomentum.clone().applyMatrix3(globInertia));
-        /////TO FUCKING DOOOO
-        //console.log(this.omega);
+*/
         addOmega(this.rotationMatrx,this.omega);
 
         //WTFF FUCK why 4D
