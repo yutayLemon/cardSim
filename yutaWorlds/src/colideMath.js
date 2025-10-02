@@ -17,7 +17,7 @@ function solveLinear(line1,line2){
 
     let xRatio1 = t;
     let xRatio2 = u;
-    
+
     let zCrod1 = line1[0].z + (line1[1].z-line1[0].z)*xRatio1;
     let zCrod2 = line2[0].z + (line2[1].z-line2[0].z)*xRatio2;
     
@@ -81,10 +81,24 @@ function addMatrx(subject,Matrix){
 
 
 function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is unit
+
+    //TO DO CHEAK
+    //sepetaing test failing.... FUCK
+    if(obj1.position.clone().sub(obj2.position).dot(collision.normal)){
+        collision.normal.multiplyScalar(-1);
+    }
+
     let velp1 = obj1.vel.clone().add(obj1.omega.clone().cross(collision.contact.box1));
     let velp2 = obj2.vel.clone().add(obj2.omega.clone().cross(collision.contact.box2));
 
     let relativeVel = velp2.clone().sub(velp1);
+
+    let relativeAlongN = relativeVel.dot(collision.normal);
+
+    if(relativeAlongN < 0){
+        return {fail:true};
+    }
+
     let impulse = collision.normal.dot(relativeVel.clone().multiplyScalar((-1)*eFact-1));
 
     let impInvRcrossR1 = collision.contact.box1.clone();
@@ -104,7 +118,7 @@ function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is
     den += collision.normal.dot(impInvRcrossR1);
     den += collision.normal.dot(impInvRcrossR2);
 
-    return impulse/den;
+    return {fail:false,val:impulse/den};
 }
 
 function distFromPlaneSqu(normal,planePoint,points){

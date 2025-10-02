@@ -85,7 +85,7 @@ function prossesCollisions(){
     }
 
     //let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
-    let objs = cards;//.concat([player]).concat([floor]);//TODO DEBUGGG
+    let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
     updateArrCollisions(objs);//TODO think about placement
 }
 

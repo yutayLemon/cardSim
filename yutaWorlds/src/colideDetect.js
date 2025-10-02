@@ -15,22 +15,25 @@ function resolveCollision(obj1,obj2){
 
         if(collision.colide){
             let impulse = getImpulse(obj1,obj2,1,collision);
-        if(isNaN(impulse)){
+            if(impulse.fail){
+                return;
+            }
+        if(isNaN(impulse.val)){
         }else{
 
             //FIX FUCKING COLISION NORMAL DIRECTIONS
-                obj1.vel.sub(collision.normal.clone().multiplyScalar(impulse/obj1.mass));
-                obj2.vel.add(collision.normal.clone().multiplyScalar(impulse/obj2.mass));
+                obj1.vel.sub(collision.normal.clone().multiplyScalar(impulse.val/obj1.mass));
+                obj2.vel.add(collision.normal.clone().multiplyScalar(impulse.val/obj2.mass));
 
                 obj1.omega.sub(collision.contact.box1.clone()
                 .cross(collision.normal)
                 .applyMatrix3(obj1.inertiaTensorInverse)
-                .multiplyScalar(impulse));
+                .multiplyScalar(impulse.val));
                 
                 obj2.omega.add(collision.contact.box2.clone()
                 .cross(collision.normal)
                 .applyMatrix3(obj2.inertiaTensorInverse)
-                .multiplyScalar(impulse));
+                .multiplyScalar(impulse.val));
 
                 obj1.debugArrows.contact.dir.set(collision.contact.box1.x,collision.contact.box1.y,collision.contact.box1.z);
                 obj1.debugArrows.contact.len = 15;
@@ -40,6 +43,7 @@ function resolveCollision(obj1,obj2){
                 obj2.debugArrows.coliNorm.len = 20;
         }
     }
+    return;
 }
 
 function resolveCollisionPlane(plane,obj){
@@ -92,8 +96,8 @@ function cloideBox2Box(box1,box2){
     }else if(minimumInfo.class == "edge-edge"){
         let edge1 = [minimumInfo.int1.vert[1],findEdgeEnd(minimumInfo.int1.vert[1],box1.verticeArrGlobal,minimumInfo.collisionNormal)];
         let edge2 = [minimumInfo.int2.vert[0],findEdgeEnd(minimumInfo.int2.vert[0],box2.verticeArrGlobal,minimumInfo.collisionNormal)];
-        console.log(debugPrintEdge(edge1,"lin1"));
-        console.log(debugPrintEdge(edge2,"lin2"));
+        //console.log(debugPrintEdge(edge1,"lin1"));
+        //console.log(debugPrintEdge(edge2,"lin2"));
 
         let edgeContact = contactPointEdegToEdge(
                                 {obj1:edge1,obj2:edge2},
@@ -105,8 +109,8 @@ function cloideBox2Box(box1,box2){
         console.log("collsion class could not be found");
     }
 
-    let txtDebug = debugPrintContact(box1,box2,box1Cont,box2Cont,minimumInfo);
-    console.log(txtDebug);
+    //let txtDebug = debugPrintContact(box1,box2,box1Cont,box2Cont,minimumInfo);
+    //console.log(txtDebug);
     return {colide:true,normal:minimumInfo.collisionNormal,contact:{box1:box1Cont,box2:box2Cont}};
 }
 
