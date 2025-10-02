@@ -1,0 +1,7 @@
+recorses
+https://www.chrishecker.com/images/e/e7/Gdmphys3.pdf
+https://euclideanspace.com/physics/dynamics/collision/threed/
+https://en.wikipedia.org/wiki/Collision_response
+https://www.youtube.com/watch?v=EB6NY5sGd08
+https://imagetostl.com/create-3d-heightmap#google_vignette
+https://myminifactory.github.io/Fast-Quadric-Mesh-Simplification/

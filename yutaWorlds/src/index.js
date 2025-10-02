@@ -43,7 +43,7 @@ console.log(cards);
 let player = new playerObj(scene,0.5);
 player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft[0]);
 
-let floor = new approxPlane(scene,10);
+let floor = new approxPlane(scene,100);
 
 let tick = 0;
 window.step  = false;
