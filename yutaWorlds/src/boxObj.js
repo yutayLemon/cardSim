@@ -28,6 +28,11 @@ class boxObj{
             0,1,0,
             0,0,1
         );
+        this.correctionRotationMatrx = new THREE.Matrix3(
+            1,0,0,
+            0,1,0,
+            0,0,1
+        );
 
         this.omega = new THREE.Vector3(0,0,0);
         this.vel = new THREE.Vector3(0,0,0);
@@ -36,16 +41,7 @@ class boxObj{
 
         this.angMomentum = new THREE.Vector3(0,0,0);
 
-        this.debugArrows = {
-            vel:new debugArrow(0xff0000,scene),
-            acc:new debugArrow(0x00ff00,scene),
-            contact:new debugArrow(0x0000ff,scene),
-            omega:new debugArrow(0xff00ff,scene),
-            impulse:new debugArrow(0xff00ff,scene),
-            angimplse:new debugArrow(0xff00ff,scene),
-            coliNorm:new debugArrow(0x777777,scene)
-        }
-
+        
         this.scale = 1;
 
         this.restitutionFactor = 0.8;
@@ -115,9 +111,24 @@ class boxObj{
 
         this.inertiaTensors = new THREE.Matrix3();
         this.inertiaTensorInverse = new THREE.Matrix3();
-        
+        this.lastTick = 0;
+        this.debugSetUp(scene);
         this.calcInertia();
+    }
 
+    debugSetUp(scene){
+        this.debugArrows = {
+            vel:new debugArrow(0xff0000,scene),
+            acc:new debugArrow(0x00ff00,scene),
+            contact:new debugArrow(0x0000ff,scene),
+            omega:new debugArrow(0xff00ff,scene),
+            impulse:new debugArrow(0xff00ff,scene),
+            angimplse:new debugArrow(0xff00ff,scene),
+            coliNorm:new debugArrow(0x777777,scene)
+        }
+
+    }
+    loadModel(scene){
 
         const boxGemo = new THREE.BoxGeometry(this.width,this.height,this.thickness);
         const boxMet = new THREE.MeshStandardMaterial({
@@ -127,9 +138,9 @@ class boxObj{
         this.threeJsObj = boxMesh;
 
         this.threeJsObj.castShadow = true;
+        this.threeJsObj.receiveShadow = true;
         this.threeJsObj.name = this.name;
 
-        this.lastTick = 0;
 
         this.addToScene(scene);
     }
@@ -208,9 +219,11 @@ class boxObj{
         this.acc.copy(this.force.clone().divideScalar(this.mass));
         //this.angacc.copy(this.torque.clone().divide(this.moment));
         this.updatePosVel(h);
-        this.threeJsObj.scale.set(this.scale,this.scale,this.scale);
+        //this.threeJsObj.scale.set(this.scale,this.scale,this.scale);
 
-        this.threeJsObj.material.color.set(this.color);
+         if(this.threeJsObj.material && this.threeJsObj.material.color){
+             this.threeJsObj.material.color.set(this.color);
+         }
 
         this.updateArrows();
     }
@@ -228,7 +241,7 @@ class boxObj{
         addOmega(this.rotationMatrx,this.omega);
 
         //WTFF FUCK why 4D
-        const tempMatrix4 = new THREE.Matrix4().setFromMatrix3(this.rotationMatrx);
+        const tempMatrix4 = new THREE.Matrix4().setFromMatrix3(this.correctionRotationMatrx.clone().multiply(this.rotationMatrx));
         this.eularRotation = new THREE.Euler().setFromRotationMatrix(tempMatrix4);
         
         this.threeJsObj.position.copy(this.position);

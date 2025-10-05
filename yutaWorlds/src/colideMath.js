@@ -156,5 +156,11 @@ function distFromPlaneSqu(normal,planePoint,points){
 }
 
 
+function applyRotation(rotx,roty,rotz,matrix){
+    const euler = new THREE.Euler(rotx,roty,rotz, 'XYZ');
+    const rotationMatrix4 = new THREE.Matrix4().makeRotationFromEuler(euler);
+    const rotationMatrix3 = new THREE.Matrix3().setFromMatrix4(rotationMatrix4);
+    matrix.multiply(rotationMatrix3);
+}
 
 export {solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse,applyImpulse}

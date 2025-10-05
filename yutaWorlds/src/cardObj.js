@@ -3,15 +3,24 @@ import * as THREE from 'three';
 import {state} from './keyInput.js'
 import {addDebugPoint} from './debug.js'
 import {resolveCollisionPlane} from './colideDetect.js'
+import {makeCardMdl,loadCardMdl,woodPlane} from './cardMdl.js'
 
 let g = new THREE.Vector3(0,-0.1,0);
 
 class cardObj extends boxObj{
     constructor(scene,size){
-        super(scene,size,1.414,0.1);
+        super(scene,size,1.5,0.04);
         this.name = "card";
         this.color = 0xffff00;
         this.mass = 0.6;
+        this.loadModel(scene);
+    }
+
+    loadModel(scene){
+        this.threeJsObj = makeCardMdl(this.width);
+        this.threeJsObj.castShadow = true;
+        this.threeJsObj.receiveShadow = true;
+        this.addToScene(scene);
     }
 
     updateBoxDebug(){
@@ -57,6 +66,8 @@ class playerObj extends boxObj{
         this.fowardVect = new THREE.Vector3(1,0,0);
         this.rightVect = new THREE.Vector3(0,0,1);
         this.upVect = new THREE.Vector3(0,1,0);
+
+        this.loadModel(scene);
     }
 
     updateDirVects(camera){
@@ -139,6 +150,12 @@ class playerObj extends boxObj{
 class approxPlane extends boxObj{
     constructor(scene,size){
         super(scene,size,0.001,1);
+        this.correctionRotationMatrx.set(
+                    1,0,0,
+                    0,Math.cos(Math.PI*0.5),-Math.sin(Math.PI*0.5),
+                    0,Math.sin(Math.PI*0.5),Math.cos(Math.PI*0.5)
+                );
+        
         this.name = "plane";
         this.color = 0xffffff;
         this.restitutionFactor = 1;
@@ -150,8 +167,17 @@ class approxPlane extends boxObj{
         ];
 
         this.calcInertia();
+        this.loadModel(scene);
 
     }
+
+    loadModel(scene){
+        this.threeJsObj = woodPlane(this.width);
+        this.threeJsObj.castShadow = true;
+        this.threeJsObj.receiveShadow = true;
+        this.addToScene(scene);
+    }
+
     updateColide(otherObj){
         resolveCollisionPlane(this,otherObj);
     }

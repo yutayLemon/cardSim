@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 
+const whiteWallURL = './img/whitewall.png';
+
+
 function initScene(){
 const renderer = new THREE.WebGLRenderer();
 
@@ -18,6 +21,32 @@ const camera = new THREE.PerspectiveCamera(
 
 renderer.shadowMap.enabled = true;
 
+const cubeTexture = new THREE.CubeTextureLoader();
+scene.background = cubeTexture.load([
+  whiteWallURL,
+  whiteWallURL,
+  whiteWallURL,
+  whiteWallURL,
+  whiteWallURL,
+  whiteWallURL
+]);
+
+const spotLight = new THREE.SpotLight(0xffffff, 4); // white light, intensity 1
+spotLight.position.set(10, 20, 10); // position above and to the side
+
+spotLight.angle = Math.PI / 6; // cone angle
+spotLight.penumbra = 0.2;      // softness at edges
+spotLight.decay = 2;           // light decay over distance
+spotLight.distance = 100;      // how far the light reaches
+
+spotLight.castShadow = true;
+spotLight.shadow.mapSize.width = 1024;
+spotLight.shadow.mapSize.height = 1024;
+spotLight.shadow.camera.near = 10;
+spotLight.shadow.camera.far = 200;
+
+scene.add(spotLight);
+
 
 //light
 const ambientLight = new THREE.AmbientLight(0xffffff,0.3);
@@ -31,6 +60,8 @@ scene.add(directionalLight);
 const directionalHelp = new THREE.DirectionalLightHelper(directionalLight);
 scene.add(directionalHelp);
 
+const hemiLight = new THREE.HemisphereLight( 0xffeeb1, 0x080820, 1 );
+scene.add( hemiLight );
 
 const axesHelp = new THREE.AxesHelper(5);
 scene.add(axesHelp);
@@ -42,12 +73,12 @@ camera.position.set(-6,3,0);
 camera.lookAt(0,0,0);
 
 
-const gridHelp = new THREE.GridHelper(30,120);
-scene.add(gridHelp);
+//const gridHelp = new THREE.GridHelper(30,120);
+//scene.add(gridHelp);
 
 const controles = new OrbitControls(camera,renderer.domElement);
 
-return {scene:scene,renderer:renderer,camera:camera,controles:controles};
+return {scene:scene,renderer:renderer,camera:camera,controles:controles,spotLight:spotLight};
 
 }
 export {initScene}

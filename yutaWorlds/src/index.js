@@ -3,14 +3,15 @@ import {cardObj,playerObj,approxPlane} from './cardObj'
 import {state,initKeyInput} from './keyInput.js'
 import {updateDebug,initDebug,debugVertex,debugP} from './debug.js'
 import {cloideBox2Box,resolveCollision,updateArrCollisions} from './colideDetect.js'
-
+import {makeCardMdl,loadCardMdl} from './cardMdl.js'
 import {initScene} from './sceneSetUp.js'
 
-let {scene,renderer,camera,controles} = initScene();
-window.simPause = false;
 
-initKeyInput();
-initDebug(scene);
+
+let player,floor,tick,cards;
+
+function main(){
+  window.simPause = false;
 //WTF
 //        const euler = new THREE.Euler(Math.PI*0.25, Math.PI*0.25, 0, 'XYZ');
 //        const euler = new THREE.Euler( Math.PI*0.25,0, 0, 'XYZ');
@@ -26,7 +27,7 @@ const euler1 = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math
         const rotationMatrix31 = new THREE.Matrix3().setFromMatrix4(rotationMatrix41);
 
 
-var cards = [];
+cards = [];
 cards.push(new cardObj(scene,2));
 cards.push(new cardObj(scene,2));
 cards[0].place(new THREE.Vector3(1,3,0),cards[0].vertex.bottomRight[0]);
@@ -40,14 +41,31 @@ cards[0].rotationMatrx.multiply(rotationMatrix31);
 cards[1].angMomentum.set(0.05,0.05,0.05);
 console.log(cards);
 
-let player = new playerObj(scene,0.5);
+player = new playerObj(scene,0.5);
 player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft[0]);
 
-let floor = new approxPlane(scene,100);
+floor = new approxPlane(scene,400);
 
-let tick = 0;
+tick = 0;
 window.step  = false;
+
+renderer.render(scene,camera);
+renderer.setAnimationLoop(animate);
+}
+
+
+
+let {scene,renderer,camera,controles,spotLight} = initScene();
+initKeyInput();
+initDebug(scene);
+
+Promise.all([loadCardMdl()]).then(()=>{
+  main();
+});
+
+
 function animate(time){
+
     controles.update();
     if(window.simPause && !window.step){
     }else{
@@ -57,6 +75,13 @@ function animate(time){
 
       prossesCollisions();
     }
+
+    
+    spotLight.position.set(
+      camera.position.x+10,
+      camera.position.y+10,
+      camera.position.z+10
+    );
     
     renderer.render(scene,camera);
 }
@@ -88,9 +113,6 @@ function prossesCollisions(){
     let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
     updateArrCollisions(objs);//TODO think about placement
 }
-
-renderer.render(scene,camera);
-renderer.setAnimationLoop(animate);
 
 window.step = function(){animate();console.log(cards)};
 
