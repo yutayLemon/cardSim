@@ -121,8 +121,36 @@ function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is
 }
 
 function evalCorrectionVal(obj1,obj2,collsion){//time for impulse derives velocity to seperate coligion
-    let velPoint1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega,collsion.contact.box1));
-    let velPoint2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega,collsion.contact.box2));
+    /*
+    let velPoint1 = obj1.vel.clone().add(obj1.correction.deltaVel);
+    let velPoint2 = obj2.vel.clone().add(obj2.correction.deltaVel);
+
+    let relativeVel = velPoint2.clone().sub(velPoint1);
+    let relativeAlongNormal = Math.abs(relativeVel.dot(collsion.normal));
+
+    let resolutionTime = (Math.abs(collsion.overlap) - relativeAlongNormal)/relativeAlongNormal;
+    */
+
+    let deltaX1 = collsion.overlap * ((obj2.mass)/(obj1.mass + obj2.mass));
+    let deltaX2 = collsion.overlap * ((obj1.mass)/(obj1.mass + obj2.mass));
+
+    let colNormal = collsion.normal;
+    if(obj2.position.clone().sub(obj1.position).dot(colNormal) < 0){
+        colNormal.multiplyScalar(-1);
+    }
+
+    let deltaPos1 = colNormal.multiplyScalar(-deltaX1);
+    let deltaPos2 = colNormal.multiplyScalar(deltaX2);
+
+    //TODO account for vel change
+    obj1.correction.deltaPos.set(deltaPos1.x,deltaPos1.y,deltaPos1.z);
+    obj2.correction.deltaPos.set(deltaPos2.x,deltaPos2.y,deltaPos2.z);
+
+
+/*
+    //impulse based
+    let velPoint1 = obj1.vel.clone().add(obj1.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj1.omega,collsion.contact.box1));
+    let velPoint2 = obj2.vel.clone().add(obj2.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj2.omega,collsion.contact.box2));
 
     let relativeVel = velPoint2.clone().sub(velPoint1);
     let relativeAlongNormal = Math.abs(relativeVel.dot(collsion.normal));
@@ -133,14 +161,15 @@ function evalCorrectionVal(obj1,obj2,collsion){//time for impulse derives veloci
     let correctionPos1 = obj1.vel.clone().multiplyScalar(resolutionTime);
     let correctionPos2 = obj2.vel.clone().multiplyScalar(resolutionTime);
 
-    let correctionRotation1 = obj1.omega.clone().multiplyScalar(resolutionTime);
-    let correctionRotation2 = obj2.omega.clone().multiplyScalar(resolutionTime);
+    let correctionRotation1 = obj1.omega.clone().add(obj1.correction.deltaOmega).multiplyScalar(resolutionTime);
+    let correctionRotation2 = obj2.omega.clone().add(obj1.correction.deltaOmega).multiplyScalar(resolutionTime);
 
     obj1.correction.deltaPos.set(correctionPos1.x,correctionPos1.y,correctionPos1.z);
     obj2.correction.deltaPos.set(correctionPos2.x,correctionPos2.y,correctionPos2.z);
 
     obj1.correction.deltaRotation.set(correctionRotation1.x,correctionRotation1.y,correctionRotation1.z);
     obj2.correction.deltaRotation.set(correctionRotation2.x,correctionRotation2.y,correctionRotation2.z);
+    */
 }
 
 function applyImpulse(obj1,obj2,collision,impulse){
