@@ -120,22 +120,45 @@ function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is
     return {fail:false,val:impulse/den};
 }
 
+function evalCorrectionVal(obj1,obj2,collsion){//time for impulse derives velocity to seperate coligion
+    let velPoint1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega,collsion.contact.box1));
+    let velPoint2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega,collsion.contact.box2));
+
+    let relativeVel = velPoint2.clone().sub(velPoint1);
+    let relativeAlongNormal = Math.abs(relativeVel.dot(collsion.normal));
+
+    let resolutionTime = (Math.abs(collsion.overlap) - relativeAlongNormal)/relativeAlongNormal;
+    //let resolutionTime = (Math.abs(collsion.overlap))/relativeAlongNormal;
+
+    let correctionPos1 = obj1.vel.clone().multiplyScalar(resolutionTime);
+    let correctionPos2 = obj2.vel.clone().multiplyScalar(resolutionTime);
+
+    let correctionRotation1 = obj1.omega.clone().multiplyScalar(resolutionTime);
+    let correctionRotation2 = obj2.omega.clone().multiplyScalar(resolutionTime);
+
+    obj1.correction.deltaPos.set(correctionPos1.x,correctionPos1.y,correctionPos1.z);
+    obj2.correction.deltaPos.set(correctionPos2.x,correctionPos2.y,correctionPos2.z);
+
+    obj1.correction.deltaRotation.set(correctionRotation1.x,correctionRotation1.y,correctionRotation1.z);
+    obj2.correction.deltaRotation.set(correctionRotation2.x,correctionRotation2.y,correctionRotation2.z);
+}
 
 function applyImpulse(obj1,obj2,collision,impulse){
-    
-    obj1.vel.sub(collision.normal.clone().multiplyScalar(impulse/obj1.mass));
-    obj2.vel.add(collision.normal.clone().multiplyScalar(impulse/obj2.mass));
+    let obj1Vel = collision.normal.clone().multiplyScalar(-impulse/obj1.mass);
+    let obj2Vel = collision.normal.clone().multiplyScalar(impulse/obj2.mass);
+    obj1.correction.deltaVel.set(obj1Vel.x,obj1Vel.y,obj1Vel.z);
+    obj2.correction.deltaVel.set(obj2Vel.x,obj2Vel.y,obj2Vel.z);
 
     let deltaOmega1 = new THREE.Vector3().crossVectors(collision.contact.box1,collision.normal);
     deltaOmega1.applyMatrix3(obj1.inertiaTensorInverse)
-               .multiplyScalar(impulse);
+               .multiplyScalar(-impulse);
 
     let deltaOmega2 = new THREE.Vector3().crossVectors(collision.contact.box2,collision.normal);
     deltaOmega2.applyMatrix3(obj2.inertiaTensorInverse)
                .multiplyScalar(impulse);
 
-    obj1.omega.sub(deltaOmega1);
-    obj2.omega.add(deltaOmega2);
+    obj1.correction.deltaOmega.set(deltaOmega1.x,deltaOmega1.y,deltaOmega1.z);
+    obj2.correction.deltaOmega.set(deltaOmega2.x,deltaOmega2.y,deltaOmega2.z);
 }
 
 function distFromPlaneSqu(normal,planePoint,points){
@@ -163,4 +186,4 @@ function applyRotation(rotx,roty,rotz,matrix){
     matrix.multiply(rotationMatrix3);
 }
 
-export {solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse,applyImpulse}
+export {solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse,applyImpulse,evalCorrectionVal}

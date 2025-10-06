@@ -41,6 +41,12 @@ class boxObj{
 
         this.angMomentum = new THREE.Vector3(0,0,0);
 
+        this.correction = {
+            deltaVel: new THREE.Vector3(0,0,0),
+            deltaPos: new THREE.Vector3(0,0,0),
+            deltaOmega: new THREE.Vector3(0,0,0),
+            deltaRotation: new THREE.Vector3(0,0,0)
+        }
         
         this.scale = 1;
 
@@ -230,6 +236,25 @@ class boxObj{
         if(this.threeJsObj.material && this.threeJsObj.material.color){
              this.threeJsObj.material.color.set(this.color);
         }
+    }
+
+    updatePositionCorrection(){
+
+    }
+
+    applyCorrection(){
+        this.vel.add(this.correction.deltaVel);
+        this.position.add(this.correction.deltaPos);
+        
+        this.omega.add(this.correction.deltaOmega);
+        addOmega(this.rotationMatrx,this.correction.deltaRotation);
+    }
+
+    initForCycle(){
+        this.correction.deltaOmega.set(0,0,0);
+        this.correction.deltaPos.set(0,0,0);
+        this.correction.deltaVel.set(0,0,0);
+        this.correction.deltaRotation.set(0,0,0);
     }
 
     

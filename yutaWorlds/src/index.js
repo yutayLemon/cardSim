@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {allInitForCycle,allApplyCorrection,allUpdateThreeJS,allUpdateRotation,allUpdatePos,allUpdateGlobalPos,allUpdateForce,allUpdateTorque,allUpdateApplieForce} from './updateAll.js'
 import {cardObj,playerObj,approxPlane} from './cardObj'
 import {state,initKeyInput} from './keyInput.js'
 import {updateDebug,initDebug,debugVertex,debugP} from './debug.js'
@@ -44,7 +45,7 @@ console.log(cards);
 player = new playerObj(scene,0.5);
 player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft[0]);
 
-floor = new approxPlane(scene,400);
+//floor = new approxPlane(scene,400);
 
 tick = 0;
 window.step  = false;
@@ -66,13 +67,13 @@ Promise.all([loadCardMdl()]).then(()=>{
 
 
 function animate(time){
-    let objArr = cards.concat([player]).concat([floor]);//TODO DEBUGGG
+    let objArr = cards.concat([player]);//.concat([floor]);//TODO DEBUGGG
 
     controles.update();
     spotLight.position.set(
-      camera.position.x+10,
-      camera.position.y+10,
-      camera.position.z+10
+      camera.position.x+1,
+      camera.position.y+1,
+      camera.position.z+1
     );
 
     if(window.simPause && !window.step){
@@ -86,7 +87,7 @@ function animate(time){
 }
 
 function proccessObjects(objArr,h){
-
+  allInitForCycle(objArr);
   allUpdateGlobalPos(objArr);
   player.updateDirVects(camera);
 
@@ -97,6 +98,8 @@ function proccessObjects(objArr,h){
 
   updateArrCollisions(objArr);
   playerCollsionColoring(objArr);
+
+  allApplyCorrection(objArr);
 
   allUpdatePos(objArr,h);
   allUpdateRotation(objArr,h);
@@ -125,45 +128,3 @@ window.addEventListener("keydown",(e)=>{
     window.step = true;
   }
 });
-
-function allUpdateGlobalPos(arr){
-  for(const item of arr){
-    item.updateGlobalPos();
-  }
-}
-
-function allUpdateForce(arr){
-  for(const item of arr){
-    item.updateForce();
-  }
-}
-
-function allUpdateTorque(arr){
-  for(const item of arr){
-    item.updateTorque();
-  }
-}
-
-function allUpdateApplieForce(arr,h){
-  for(const item of arr){
-    item.updateApplieForce(h);
-  }
-}
-
-function allUpdatePos(arr,h){
-  for(const item of arr){
-    item.updatePos(h);
-  }
-}
-
-function allUpdateRotation(arr,h){
-  for(const item of arr){
-    item.updateRotation(h);
-  }
-}
-
-function allUpdateThreeJS(arr){
-  for(const item of arr){
-    item.updateThreeJS();
-  }
-}

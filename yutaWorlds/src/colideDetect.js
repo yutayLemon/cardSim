@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {solveLinear,transformToCordinate,reConstruct,getImpulse,applyImpulse} from './colideMath.js'
+import {solveLinear,transformToCordinate,reConstruct,getImpulse,applyImpulse,evalCorrectionVal} from './colideMath.js'
 import {debugPrintContact,debugPrintEdge} from './debug.js'
 
 function updateArrCollisions(arr){
@@ -19,6 +19,8 @@ function resolveCollision(obj1,obj2){
                 return;
             }
             applyImpulse(obj1,obj2,collision,impulse.val);
+            evalCorrectionVal(obj1,obj2,collision);
+
 
             obj1.debugArrows.contact.dir.set(collision.contact.box1.x,collision.contact.box1.y,collision.contact.box1.z);
             obj1.debugArrows.contact.len = 15;
@@ -123,7 +125,7 @@ function cloideBox2Box(box1,box2){
 
     //let txtDebug = debugPrintContact(box1,box2,box1Cont,box2Cont,minimumInfo);
     //console.log(txtDebug);
-    return {colide:true,normal:minimumInfo.collisionNormal,contact:{box1:box1Cont,box2:box2Cont}};
+    return {colide:true,normal:minimumInfo.collisionNormal,contact:{box1:box1Cont,box2:box2Cont},overlap:minimumInfo.overlap};
 }
 
 function testFaceToVertex(box1,box2,normalset1,normalset2,minimumInfo){
