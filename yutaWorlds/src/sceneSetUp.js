@@ -2,6 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 
 const whiteWallURL = './img/whitewall.png';
+const v1BackGround = {
+  back:"./img/background/v2/back.png",
+  front:"./img/background/v2/front.png",
+  right:"./img/background/v2/right.png",
+  left:"./img/background/v2/left.png",
+  up:"./img/background/v2/up.png",
+  down:"./img/background/v2/down.png"
+}
 
 
 function initScene(){
@@ -23,12 +31,12 @@ renderer.shadowMap.enabled = true;
 
 const cubeTexture = new THREE.CubeTextureLoader();
 scene.background = cubeTexture.load([
-  whiteWallURL,
-  whiteWallURL,
-  whiteWallURL,
-  whiteWallURL,
-  whiteWallURL,
-  whiteWallURL
+  v1BackGround.back,
+  v1BackGround.front,
+  v1BackGround.up,
+  v1BackGround.down,
+  v1BackGround.right,
+  v1BackGround.left
 ]);
 
 const spotLight = new THREE.SpotLight(0xffffff, 4); // white light, intensity 1
@@ -66,10 +74,7 @@ scene.add( hemiLight );
 const axesHelp = new THREE.AxesHelper(5);
 scene.add(axesHelp);
 
-camera.position.z = 5;
-camera.position.x = 1;
-camera.position.y = 1;
-camera.position.set(-6,3,0);
+camera.position.set(6,3,0);
 camera.lookAt(0,0,0);
 
 

@@ -4,7 +4,19 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 let debugP = [];
 let debugObj;
 
-function updateDebug(){
+function updateDebug(arr){
+    updateDebugPoints();
+    allUpdateArrow(arr);
+}
+
+function allUpdateArrow(arr){
+    for(const item of arr){
+        item.updateArrows();
+        item.updateBoxDebug();
+    }
+}
+
+function updateDebugPoints(){
     const flat = new Float32Array(debugP.length * 3);
     const colors = new Float32Array(debugP.length * 3);
     for (let i = 0; i < debugP.length; i++) {

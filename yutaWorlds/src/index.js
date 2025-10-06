@@ -51,6 +51,7 @@ window.step  = false;
 
 renderer.render(scene,camera);
 renderer.setAnimationLoop(animate);
+
 }
 
 
@@ -65,39 +66,46 @@ Promise.all([loadCardMdl()]).then(()=>{
 
 
 function animate(time){
+    let objArr = cards.concat([player]).concat([floor]);//TODO DEBUGGG
 
     controles.update();
-    if(window.simPause && !window.step){
-    }else{
-      window.step = !window.step;
-      proccessObjects();
-      updateDebug();
-
-      prossesCollisions();
-    }
-
-    
     spotLight.position.set(
       camera.position.x+10,
       camera.position.y+10,
       camera.position.z+10
     );
+
+    if(window.simPause && !window.step){
+    }else{
+      window.step = !window.step;
+      let h = 1;
+      proccessObjects(objArr,h);
+    }
     
     renderer.render(scene,camera);
 }
 
-function proccessObjects(){
+function proccessObjects(objArr,h){
+
+  allUpdateGlobalPos(objArr);
   player.updateDirVects(camera);
 
-    //uodates
-  for(const card of cards){
-        card.update(tick);
-  }
-  player.update(tick);
-  floor.update(tick);
+  allUpdateForce(objArr);
+  allUpdateTorque(objArr);
+
+  allUpdateApplieForce(objArr);
+
+  updateArrCollisions(objArr);
+  playerCollsionColoring(objArr);
+
+  allUpdatePos(objArr,h);
+  allUpdateRotation(objArr,h);
+
+  updateDebug(objArr);
+  allUpdateThreeJS(objArr);
 }
 
-function prossesCollisions(){
+function playerCollsionColoring(arr){
   if(cloideBox2Box(cards[0],player).colide){
       player.color = 0x0000ff;
     }else{
@@ -108,10 +116,6 @@ function prossesCollisions(){
     }else{
       player.color = 0x00ff00;
     }
-
-    //let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
-    let objs = cards.concat([player]).concat([floor]);//TODO DEBUGGG
-    updateArrCollisions(objs);//TODO think about placement
 }
 
 window.step = function(){animate();console.log(cards)};
@@ -121,3 +125,45 @@ window.addEventListener("keydown",(e)=>{
     window.step = true;
   }
 });
+
+function allUpdateGlobalPos(arr){
+  for(const item of arr){
+    item.updateGlobalPos();
+  }
+}
+
+function allUpdateForce(arr){
+  for(const item of arr){
+    item.updateForce();
+  }
+}
+
+function allUpdateTorque(arr){
+  for(const item of arr){
+    item.updateTorque();
+  }
+}
+
+function allUpdateApplieForce(arr,h){
+  for(const item of arr){
+    item.updateApplieForce(h);
+  }
+}
+
+function allUpdatePos(arr,h){
+  for(const item of arr){
+    item.updatePos(h);
+  }
+}
+
+function allUpdateRotation(arr,h){
+  for(const item of arr){
+    item.updateRotation(h);
+  }
+}
+
+function allUpdateThreeJS(arr){
+  for(const item of arr){
+    item.updateThreeJS();
+  }
+}

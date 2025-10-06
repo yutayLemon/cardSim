@@ -116,18 +116,6 @@ class boxObj{
         this.calcInertia();
     }
 
-    debugSetUp(scene){
-        this.debugArrows = {
-            vel:new debugArrow(0xff0000,scene),
-            acc:new debugArrow(0x00ff00,scene),
-            contact:new debugArrow(0x0000ff,scene),
-            omega:new debugArrow(0xff00ff,scene),
-            impulse:new debugArrow(0xff00ff,scene),
-            angimplse:new debugArrow(0xff00ff,scene),
-            coliNorm:new debugArrow(0x777777,scene)
-        }
-
-    }
     loadModel(scene){
 
         const boxGemo = new THREE.BoxGeometry(this.width,this.height,this.thickness);
@@ -159,6 +147,20 @@ class boxObj{
         );
     }
 
+    //debug
+    debugSetUp(scene){
+        this.debugArrows = {
+            vel:new debugArrow(0xff0000,scene),
+            acc:new debugArrow(0x00ff00,scene),
+            contact:new debugArrow(0x0000ff,scene),
+            omega:new debugArrow(0xff00ff,scene),
+            impulse:new debugArrow(0xff00ff,scene),
+            angimplse:new debugArrow(0xff00ff,scene),
+            coliNorm:new debugArrow(0x777777,scene)
+        }
+
+    }
+    //debug
     updateArrows(){
         this.debugArrows.acc.updateArrow(this.position,this.acc);
         this.debugArrows.vel.updateArrow(this.position,this.vel);
@@ -177,7 +179,7 @@ class boxObj{
 
     }
 
-    updateGlobal(){
+    updateGlobalPos(){
         for(let i = 0;i<this.verticeArr.length;i++){
             this.verticeArrGlobal[i].copy(this.verticeArr[i]);
             this.verticeArrGlobal[i].applyMatrix3(this.rotationMatrx);
@@ -191,44 +193,18 @@ class boxObj{
         }
     }
 
-    place(pos,corner){
-        this.position.sub(corner);
-        this.position.add(pos);
-    }
-
-    addToScene(scene){
-        scene.add(this.threeJsObj);
-    }
-
     updateTorque(){
     }
     
     updateForce(){
     }
 
-    update(tick){
-        let deltaTime = this.lastTick - tick;
-
-
-        this.updateGlobal();
-        this.updateForce();
-        this.updateTorque();
-        this.updateBoxDebug();
-        let h = 1;
-
-        this.acc.copy(this.force.clone().divideScalar(this.mass));
-        //this.angacc.copy(this.torque.clone().divide(this.moment));
-        this.updatePosVel(h);
-        //this.threeJsObj.scale.set(this.scale,this.scale,this.scale);
-
-         if(this.threeJsObj.material && this.threeJsObj.material.color){
-             this.threeJsObj.material.color.set(this.color);
-         }
-
-        this.updateArrows();
+    updateApplieForce(h){
+        this.acc.copy(this.force.clone().divideScalar(this.mass).multiplyScalar(h));
+        //this.vel.add(this.acc.clone().multiplyScalar(h));
     }
 
-    updatePosVel(h){
+    updatePos(h){
         this.position.add(this.vel.clone().multiplyScalar(h));
         ///update omega from impulse
         //this.omega = this.rotationMatrx*this.inertiaTensorInverse*this.rotationMatrx^T*this.angMomentum;
@@ -238,15 +214,34 @@ class boxObj{
         .multiplyMatrices(this.rotationMatrx.clone(),this.inertiaTensorInverse)
         .multiply(this.rotationMatrx.clone().transpose());
 */
-        addOmega(this.rotationMatrx,this.omega);
+    }
 
-        //WTFF FUCK why 4D
+    updateRotation(h){
+        addOmega(this.rotationMatrx,this.omega.clone().multiplyScalar(h));
+    }
+
+    updateThreeJS(){
+        this.threeJsObj.position.copy(this.position);
+        //WTF FUCK why 4D
         const tempMatrix4 = new THREE.Matrix4().setFromMatrix3(this.correctionRotationMatrx.clone().multiply(this.rotationMatrx));
         this.eularRotation = new THREE.Euler().setFromRotationMatrix(tempMatrix4);
-        
-        this.threeJsObj.position.copy(this.position);
         this.threeJsObj.rotation.copy(this.eularRotation);
+
+        if(this.threeJsObj.material && this.threeJsObj.material.color){
+             this.threeJsObj.material.color.set(this.color);
+        }
     }
+
+    
+    place(pos,corner){
+        this.position.sub(corner);
+        this.position.add(pos);
+    }
+
+    addToScene(scene){
+        scene.add(this.threeJsObj);
+    }
+
 }
 
 export {boxObj};
