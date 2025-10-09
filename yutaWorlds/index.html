@@ -11,6 +11,47 @@
   </head>
   <body>
     <div id="app"></div>
+
+    <script src="/src/global.js"></script>
+<!----------------PHYSICS UI-->
+  <div id="physics-ui">
+  <div class="panel">
+    <h2>Physics Debug</h2>
+
+    <label><input type="checkbox" id="toggle-arrow" value="arrow" checked="true"> Show debug arrows</label>
+    <label><input type="checkbox" id="toggle-points" value="points" checked="true"> Show debug points</label>
+    <label><input type="checkbox" id="toggle-selection" value="selection" checked="true"> debug selection on</label>
+    <label><input type="button" id="toggle-flow" value="flow"> camera flow</label>
+    <input type="file" accept=".json" id="uploadFile"><input type="button" id="importFile" value="import">
+    <input type="button" id="exportFile" value="export">
+    <br>
+    <input type="button" id="video-start" value="start recording">
+    <input type="button" id="video-stop" value="stop recording">
+    <a id="video-download">download</a>
+
+    <hr>
+
+    <div class="section">
+      <button class="toggle-btn" data-target="object-section">▶ Objects</button>
+      <div class="content" id="object-section">
+        <p>Selected: <span id="selected-name">None</span></p>
+        <p>Type: <span id="selected-type">—</span></p>
+      </div>
+    </div>
+
+    <div class="section">
+      <button class="toggle-btn" data-target="position-section">▶ Position & Velocity</button>
+      <div class="content" id="position-section">
+        <p>Position: <span id="pos"></span></p>
+        <p>Velocity: <span id="vel"></span></p>
+        <p>Rotation: <span id="rot"></span></p>
+      </div>
+    </div>
+  </div>
+</div>
+    <script type="module" src="/src/ctrlPanel.js"></script>
+<!----------------PHYSICS UI-->
+
     <script type="module" src="/src/sceneSetUp.js"></script>
     <script type="module" src="/src/index.js"></script>
     <script type="module" src="/src/physicalObj.js"></script>

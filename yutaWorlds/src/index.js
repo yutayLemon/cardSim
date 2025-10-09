@@ -6,13 +6,15 @@ import {updateDebug,initDebug,debugVertex,debugP} from './debug.js'
 import {cloideBox2Box,resolveCollision,updateArrCollisions} from './colideDetect.js'
 import {makeCardMdl,loadCardMdl} from './cardMdl.js'
 import {initScene} from './sceneSetUp.js'
-
+import {exportAll} from './import.js'
+import { step } from 'three/src/nodes/TSL.js';
+import {initRecorder} from './recording.js';
 
 
 let player,floor,tick,cards;
 
 function main(){
-  window.simPause = false;
+  window.simulation.state.simPause = false;
 //WTF
 //        const euler = new THREE.Euler(Math.PI*0.25, Math.PI*0.25, 0, 'XYZ');
 //        const euler = new THREE.Euler( Math.PI*0.25,0, 0, 'XYZ');
@@ -31,8 +33,8 @@ const euler1 = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math
 cards = [];
 cards.push(new cardObj(scene,2));
 cards.push(new cardObj(scene,2));
-cards[0].place(new THREE.Vector3(1,3,0),cards[0].vertex.bottomRight[0]);
-cards[1].place(new THREE.Vector3(0,2,4),cards[1].vertex.bottomRight[1]);
+cards[0].place(new THREE.Vector3(1,2,0),cards[0].vertex.bottomRight[0]);
+cards[1].place(new THREE.Vector3(0,1,4),cards[1].vertex.bottomRight[1]);
 cards[0].color = 0xff00ff;
 cards[1].color = 0x00ff00;
 cards[0].vel.set(0,0,0);
@@ -40,7 +42,7 @@ cards[1].vel.set(0,0,-0.03);
 cards[1].rotationMatrx.multiply(rotationMatrix3);
 cards[0].rotationMatrx.multiply(rotationMatrix31);
 cards[1].angMomentum.set(0.05,0.05,0.05);
-console.log(cards);
+
 
 player = new playerObj(scene,0.5);
 player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft[0]);
@@ -48,11 +50,12 @@ player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft[0]);
 //floor = new approxPlane(scene,400);
 
 tick = 0;
-window.step  = false;
+window.simulation.state.step  = false;
 
 renderer.render(scene,camera);
 renderer.setAnimationLoop(animate);
 
+window.simulation.objects = cards.concat([player]);//.concat([floor]);//TODO DEBUGGG
 }
 
 
@@ -60,14 +63,19 @@ renderer.setAnimationLoop(animate);
 let {scene,renderer,camera,controles,spotLight} = initScene();
 initKeyInput();
 initDebug(scene);
-
+initRecorder(renderer);
 Promise.all([loadCardMdl()]).then(()=>{
   main();
 });
 
-
 function animate(time){
-    let objArr = cards.concat([player]);//.concat([floor]);//TODO DEBUGGG
+
+    if(window.simulation.camera.flow){
+
+      camera.position.x = Math.sin(time*0.0005)*5;
+      camera.position.z = Math.cos(time*0.0005)*5;
+      camera.lookAt(0,0,0);
+    }
 
     controles.update();
     spotLight.position.set(
@@ -76,15 +84,16 @@ function animate(time){
       camera.position.z+1
     );
 
-    if(window.simPause && !window.step){
+    if(window.simulation.state.simPause && !window.simulation.state.step){
     }else{
-      window.step = !window.step;
+      window.simulation.state.step = !window.simulation.state.step;
       let h = 1;
-      proccessObjects(objArr,h);
+      proccessObjects(window.simulation.objects,h);
     }
     
     renderer.render(scene,camera);
 }
+
 
 function proccessObjects(objArr,h){
   allInitForCycle(objArr);
@@ -121,10 +130,4 @@ function playerCollsionColoring(arr){
     }
 }
 
-window.step = function(){animate();console.log(cards)};
-
-window.addEventListener("keydown",(e)=>{
-  if(e.key == 's'){
-    window.step = true;
-  }
-});
+export {scene,animate};

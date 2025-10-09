@@ -7,7 +7,7 @@ function loadFont(){
     return new Promise((resolve,reject)=>{
         loader.load('./public/helvetiker_regular.typeface.json',function(font){
             console.log('font loaded...');
-            window.globalFont = font;
+            window.simulation.globalFont = font;
             resolve(font);
         });
     });

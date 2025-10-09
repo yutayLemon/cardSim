@@ -26,5 +26,4 @@ function allApplyCorrection(arr){for(const item of arr){
 function allInitForCycle(arr){for(const item of arr){
     item.initForCycle();}}
 
-
 export {allInitForCycle,allApplyCorrection,allUpdateThreeJS,allUpdateRotation,allUpdatePos,allUpdateGlobalPos,allUpdateForce,allUpdateTorque,allUpdateApplieForce}

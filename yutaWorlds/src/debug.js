@@ -17,6 +17,7 @@ function allUpdateArrow(arr){
 }
 
 function updateDebugPoints(){
+    if(window.simulation.debug.points){
     const flat = new Float32Array(debugP.length * 3);
     const colors = new Float32Array(debugP.length * 3);
     for (let i = 0; i < debugP.length; i++) {
@@ -26,13 +27,34 @@ function updateDebugPoints(){
     }
     debugObj.geometry.setAttribute('position',new THREE.BufferAttribute(flat,3));
     debugObj.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+    }
+    
+    debugObj.visible = window.simulation.debug.points;
     debugObj.geometry.attributes.position.needsUpdate = true;
+    
 
 
     debugP = [];
 }
 
+function deleteDebugPoints(scene){
+        scene.remove(debugObj);
+        if(debugObj.geometry){
+            debugObj.geometry.dispose();
+        }
+        if(debugObj.material){
+            if(Array.isArray(debugObj.material)){
+                for(const elm of debugObj.material){
+                    elm.dispose();
+                }
+            }else{
+            debugObj.material.dispose();
+        }
+        }
+}
+
 function initDebug(scene){
+    debugP.length = 0;
     const geometry = new THREE.BufferGeometry();
     const vertices = new Float32Array([
         1,0,0,
@@ -71,7 +93,7 @@ class debugArrow{
 
         const textGeo = new TextGeometry(self.txt,
         {
-            font: window.globalFont,
+            font: window.simulation.globalFont,
             depth:1,
             size: 0.2,
             height: 1,
@@ -86,6 +108,7 @@ class debugArrow{
 
 
     updateArrow(origin,dir){
+        if(window.simulation.debug.arrow){
         if(origin){
             this.origin.set(origin.x,origin.y,origin.z);
         }
@@ -95,6 +118,24 @@ class debugArrow{
         this.THREEArrow.setDirection(this.dir.normalize());
         this.THREEArrow.position.set(this.origin.x,this.origin.y,this.origin.z);
         this.THREEArrow.setLength(this.len);
+        }
+        this.THREEArrow.visible = window.simulation.debug.arrow;
+    }
+
+    delete(scene){
+        scene.remove(this.THREEArrow);
+        if(this.THREEArrow.geometry){
+            this.THREEArrow.geometry.dispose();
+        }
+        if(this.THREEArrow.material){
+            if(Array.isArray(this.THREEArrow.material)){
+                for(const elm of this.THREEArrow.material){
+                    elm.dispose();
+                }
+            }else{
+            this.THREEArrow.material.dispose();
+        }
+        }
     }
 }
 
@@ -137,4 +178,4 @@ function stringCords(cord,nam,sub){
 
 
 
-export {updateDebug,initDebug,debugVertex,addDebugPoint,debugP,debugArrow,debugPrintContact,debugPrintEdge}
+export {deleteDebugPoints,updateDebug,initDebug,debugVertex,addDebugPoint,debugP,debugArrow,debugPrintContact,debugPrintEdge}

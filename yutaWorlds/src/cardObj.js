@@ -11,6 +11,7 @@ class cardObj extends boxObj{
     constructor(scene,size){
         super(scene,size,1.5,0.04);
         this.name = "card";
+        this.class = "card";
         this.color = 0xffff00;
         this.mass = 0.6;
         this.loadModel(scene);
@@ -61,6 +62,7 @@ class playerObj extends boxObj{
     constructor(scene,size){
         super(scene,size,1,1);
         this.name = "player";
+        this.class = "player";
         this.color = 0xff0000;
 
         this.fowardVect = new THREE.Vector3(1,0,0);
@@ -148,14 +150,16 @@ class playerObj extends boxObj{
 }
 
 class approxPlane extends boxObj{
+    //collsion resolution
     constructor(scene,size){
-        super(scene,size,0.001,1);
+        super(scene,size,0.005,1);
         this.correctionRotationMatrx.set(
                     1,0,0,
                     0,Math.cos(Math.PI*0.5),-Math.sin(Math.PI*0.5),
                     0,Math.sin(Math.PI*0.5),Math.cos(Math.PI*0.5)
                 );
         
+        this.class = "plane";
         this.name = "plane";
         this.color = 0xffffff;
         this.restitutionFactor = 1;
@@ -182,4 +186,5 @@ class approxPlane extends boxObj{
         resolveCollisionPlane(this,otherObj);
     }
 }
+
 export {cardObj,playerObj,approxPlane}

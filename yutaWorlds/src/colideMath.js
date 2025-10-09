@@ -215,4 +215,6 @@ function applyRotation(rotx,roty,rotz,matrix){
     matrix.multiply(rotationMatrix3);
 }
 
-export {solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse,applyImpulse,evalCorrectionVal}
+
+
+export {applyRotation,solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse,applyImpulse,evalCorrectionVal}

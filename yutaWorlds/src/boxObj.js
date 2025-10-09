@@ -2,14 +2,15 @@ import * as THREE from 'three';
 import {addDebugPoint,updateDebug,debugArrow} from './debug.js'
 import {resolveCollision} from './colideDetect.js'
 import {addOmega} from './colideMath.js';
+import {exportObjBox} from "./import.js";
 
 class boxObj{
-    constructor(scene,size,cardRatio,thickRatio){
+    constructor(scene,size,faceRatio,thickRatio){
         this.width = size;
-        this.cardRatio = cardRatio;
+        this.faceRatio = faceRatio;
         this.thickRatio = thickRatio;
 
-        this.height = this.width * this.cardRatio;
+        this.height = this.width * this.faceRatio;
         this.thickness = this.width * this.thickRatio;
 
         this.position = new THREE.Vector3(0,0,0);
@@ -267,6 +268,30 @@ class boxObj{
         scene.add(this.threeJsObj);
     }
 
+    exportObj(){
+        return exportObjBox(this);
+    }
+
+    delete(scene){
+        let item = this.threeJsObj;
+        scene.remove(item);
+        if(item.geometry){
+            item.geometry.dispose();
+        }
+        if(item.material){
+            if(Array.isArray(item.material)){
+                for(const elm of item.material){
+                    elm.dispose();
+                }
+            }else{
+            item.material.dispose();
+        }
+        }
+        for(const arrow in this.debugArrows){
+            this.debugArrows[arrow].delete(scene);
+        }
+    }
+            
 }
 
 export {boxObj};

@@ -34,7 +34,7 @@ function makeCardMdl(width){
     let factor = width/cardMdlDim.x;
     if(cardMdl){
         let newMdl = cardMdl.clone(true);
-        console.log(factor);
+        
         newMdl.scale.set(factor,factor,factor);
         return newMdl;
     }else{

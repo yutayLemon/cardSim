@@ -83,7 +83,8 @@ camera.lookAt(0,0,0);
 
 const controles = new OrbitControls(camera,renderer.domElement);
 
-return {scene:scene,renderer:renderer,camera:camera,controles:controles,spotLight:spotLight};
+console.log("scene set up...");
 
+return {scene:scene,renderer:renderer,camera:camera,controles:controles,spotLight:spotLight};
 }
 export {initScene}

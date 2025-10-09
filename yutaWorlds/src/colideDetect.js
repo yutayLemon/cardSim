@@ -2,6 +2,92 @@ import * as THREE from 'three';
 import {solveLinear,transformToCordinate,reConstruct,getImpulse,applyImpulse,evalCorrectionVal} from './colideMath.js'
 import {debugPrintContact,debugPrintEdge} from './debug.js'
 
+//one collsion reolver
+//calsses box-box plane-box ...
+class objectCollision{
+    constructor(){
+        this.obj1;
+        this.obj2;
+        this.class;
+        this.contactP1;
+        this.contactP2;
+
+        this.normal;
+        this.overlap;
+    }
+
+    init(obj1,obj2,colClass){
+        this.obj1 = obj1;
+        this.obj2 = obj2;
+        this.class = colClass;
+        this.contactP1 = new THREE.Vector3(0,0,0);
+        this.contactP2 = new THREE.Vector3(0,0,0);
+
+        this.normal = new THREE.Vector3(0,0,0);
+    }
+    
+    testCollsion(){
+        switch (this.class){
+            case "box-box":
+                break;
+            case "box-plane":
+                break;
+            case "plane-box":
+                break;
+            default:
+                //defult box-box
+                break;
+        }
+    }
+
+    impulseCalc(){
+        if(this.class == "box-box"){
+
+        }
+    }
+
+
+
+    colideBoxPlane(){
+        let box;let plane;
+        if(this.obj1.class == "plane"){
+            box = this.obj2;
+            plane = this.obj1;
+        }else{
+            box = this.obj1;
+            plane = this.obj2;
+        }
+        this.overlap = Infinity;
+        let minVer;
+        let norm = plane.surfaceNormal[0];
+        //plane to box
+        //TODO clean up
+        for(const node of box.verticeArrGlobal){
+            let dist = node.clone().sub(plane.position).dot(norm);
+            if(dist < this.overlap){
+                this.overlap = dist;
+                minVer = node;
+            }
+        }
+        if(this.overlap > 0){
+            return false;   
+        }
+        let planeContP = minVer.clone().sub(plane.position).sub(norm.clone().multiplyScalar(this.overlap));
+        let boxContP = minVer.clone().sub(box.position);
+        this.normal = norm;
+        if(this.obj1.class == "plane"){
+            this.contactP1 = planeContP;
+            this.contactP2 = boxContP;
+        }else{
+            this.contactP1 = boxContP;
+            this.contactP2 = planeContP;
+        }
+        return;   
+    }
+
+    
+}
+
 function updateArrCollisions(arr){
     for(let i = 0;i<arr.length;i++){
         for(let j = 0;j<i;j++){
@@ -40,8 +126,10 @@ function resolveCollisionPlane(plane,obj){
 
         if(collision.colide){
             let impulse = getImpulse(plane,obj,1,collision);
+            console.log(collision);
             if(!isNaN(impulse.val) && !impulse.fail){
                 applyImpulse(plane,obj,collision,impulse.val);
+                evalCorrectionVal(plane,obj,collision);
             }   
         }
         return;
@@ -50,21 +138,22 @@ function resolveCollisionPlane(plane,obj){
 function colideBoxPlane(plane,box){
     let minDep = Infinity;
     let minVer;
-    let norm = plane.globalSurfaceNormal[0];
+    let norm = plane.surfaceNormal[0];
+    //TODO clean up
     for(const node of box.verticeArrGlobal){
         let dist = plane.position.clone().sub(node).dot(norm);
+        dist*= -1;
         if(dist < minDep){
             minDep = dist;
             minVer = node;
         }
     }
+    if(minDep > 0){
+        return {colide:false};   
+    }
     let box1PlaneCont = minVer.clone().sub(plane.position);
     let box2Cont = minVer.clone().sub(box.position);
-    if(minDep <= 0){
-        return {colide:true,normal:norm,contact:{box1:box1PlaneCont,box2:box2Cont}};
-    }else{
-        return {colide:false};
-    }
+    return {colide:true,normal:norm,contact:{box1:box1PlaneCont,box2:box2Cont}};    
 }
 
 function cloideBox2Box(box1,box2){
