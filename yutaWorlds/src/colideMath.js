@@ -80,19 +80,24 @@ function addMatrx(subject,Matrix){
 }
 
 
-function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is unit
+function getImpulse(collision,eFact){//assumed that colidion normal is unit
 
-    collision.normal.normalize();
-    if(obj2.position.clone().sub(obj1.position).dot(collision.normal) < 0){
-        collision.normal.multiplyScalar(-1);
+    let normal = collision.normal;
+    let contact1 = collision.contactP1;
+    let contact2 = collision.contactP2;
+    let obj1 = collision.obj1;
+    let obj2 = collision.obj2;
+    normal.normalize();
+    if(obj2.position.clone().sub(obj1.position).dot(normal) < 0){
+        normal.multiplyScalar(-1);
     }
 
-    let velp1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega,collision.contact.box1));
-    let velp2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega,collision.contact.box2));
+    let velp1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega,contact1));
+    let velp2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega,contact2));
 
     let relativeVel = velp2.clone().sub(velp1);
 
-    let relativeAlongN = relativeVel.dot(collision.normal);
+    let relativeAlongN = relativeVel.dot(normal);
     // -> <-
     // <- <- neg
 
@@ -102,12 +107,12 @@ function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is
 
     let impulse = collision.normal.dot(relativeVel.clone().multiplyScalar((-1)*(eFact+1)));
 
-    let impInvRcrossR1 = new THREE.Vector3().crossVectors(collision.contact.box1,collision.normal);
-    impInvRcrossR1.cross(collision.contact.box1);
+    let impInvRcrossR1 = new THREE.Vector3().crossVectors(contact1,collision.normal);
+    impInvRcrossR1.cross(contact1);
     impInvRcrossR1.applyMatrix3(obj1.inertiaTensorInverse);
 
-    let impInvRcrossR2 = new THREE.Vector3().crossVectors(collision.contact.box2,collision.normal);
-    impInvRcrossR2.cross(collision.contact.box2);
+    let impInvRcrossR2 = new THREE.Vector3().crossVectors(contact2,collision.normal);
+    impInvRcrossR2.cross(contact2);
     impInvRcrossR2.applyMatrix3(obj2.inertiaTensorInverse);
 
     let den = 0;
@@ -120,7 +125,7 @@ function getImpulse(obj1,obj2,eFact,collision){//assumed that colidion normal is
     return {fail:false,val:impulse/den};
 }
 
-function evalCorrectionVal(obj1,obj2,collsion){//time for impulse derives velocity to seperate coligion
+function evalCorrectionVal(collsion){//time for impulse derives velocity to seperate coligion
     /*
     let velPoint1 = obj1.vel.clone().add(obj1.correction.deltaVel);
     let velPoint2 = obj2.vel.clone().add(obj2.correction.deltaVel);
@@ -130,6 +135,8 @@ function evalCorrectionVal(obj1,obj2,collsion){//time for impulse derives veloci
 
     let resolutionTime = (Math.abs(collsion.overlap) - relativeAlongNormal)/relativeAlongNormal;
     */
+   let obj1 = collsion.obj1;
+   let obj2 = collsion.obj2;
 
     let deltaX1 = collsion.overlap * ((obj2.mass)/(obj1.mass + obj2.mass));
     let deltaX2 = collsion.overlap * ((obj1.mass)/(obj1.mass + obj2.mass));
@@ -172,17 +179,20 @@ function evalCorrectionVal(obj1,obj2,collsion){//time for impulse derives veloci
     */
 }
 
-function applyImpulse(obj1,obj2,collision,impulse){
+function applyImpulse(collision,impulse){
+    let obj1 = collision.obj1;
+    let obj2 = collision.obj2;
+
     let obj1Vel = collision.normal.clone().multiplyScalar(-impulse/obj1.mass);
     let obj2Vel = collision.normal.clone().multiplyScalar(impulse/obj2.mass);
     obj1.correction.deltaVel.set(obj1Vel.x,obj1Vel.y,obj1Vel.z);
     obj2.correction.deltaVel.set(obj2Vel.x,obj2Vel.y,obj2Vel.z);
 
-    let deltaOmega1 = new THREE.Vector3().crossVectors(collision.contact.box1,collision.normal);
+    let deltaOmega1 = new THREE.Vector3().crossVectors(collision.contactP1,collision.normal);
     deltaOmega1.applyMatrix3(obj1.inertiaTensorInverse)
                .multiplyScalar(-impulse);
 
-    let deltaOmega2 = new THREE.Vector3().crossVectors(collision.contact.box2,collision.normal);
+    let deltaOmega2 = new THREE.Vector3().crossVectors(collision.contactP2,collision.normal);
     deltaOmega2.applyMatrix3(obj2.inertiaTensorInverse)
                .multiplyScalar(impulse);
 

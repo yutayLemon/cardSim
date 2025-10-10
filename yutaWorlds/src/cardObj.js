@@ -2,7 +2,6 @@ import {boxObj} from './boxObj'
 import * as THREE from 'three';
 import {state} from './keyInput.js'
 import {addDebugPoint} from './debug.js'
-import {resolveCollisionPlane} from './colideDetect.js'
 import {makeCardMdl,loadCardMdl,woodPlane} from './cardMdl.js'
 
 let g = new THREE.Vector3(0,-0.1,0);
@@ -12,6 +11,10 @@ class cardObj extends boxObj{
         super(scene,size,1.5,0.04);
         this.name = "card";
         this.class = "card";
+        this.geometryClass = "box";
+
+        this.mdlOffset = new THREE.Vector3(0.029,-0.06,0.01);
+
         this.color = 0xffff00;
         this.mass = 0.6;
         this.loadModel(scene);
@@ -48,14 +51,6 @@ class cardObj extends boxObj{
         this.force.add(g.multiplyScalar(this.mass));
         //this.force = scaleVect(this.mass,g);
     }
-
-    groundCalc(){
-
-    }
-
-    colide(){
-
-    }
 }
 
 class playerObj extends boxObj{
@@ -63,6 +58,8 @@ class playerObj extends boxObj{
         super(scene,size,1,1);
         this.name = "player";
         this.class = "player";
+        this.geometryClass = "box";
+
         this.color = 0xff0000;
 
         this.fowardVect = new THREE.Vector3(1,0,0);
@@ -139,14 +136,6 @@ class playerObj extends boxObj{
             //this.angvel.z = 0.1;
         }
     }
-
-    groundCalc(){
-
-    }
-
-    colide(){
-
-    }
 }
 
 class approxPlane extends boxObj{
@@ -161,6 +150,7 @@ class approxPlane extends boxObj{
         
         this.class = "plane";
         this.name = "plane";
+        this.geometryClass = "plane";
         this.color = 0xffffff;
         this.restitutionFactor = 1;
         this.position.set(0,0,0);
@@ -180,10 +170,6 @@ class approxPlane extends boxObj{
         this.threeJsObj.castShadow = true;
         this.threeJsObj.receiveShadow = true;
         this.addToScene(scene);
-    }
-
-    updateColide(otherObj){
-        resolveCollisionPlane(this,otherObj);
     }
 }
 

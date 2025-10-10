@@ -29,6 +29,27 @@
     <input type="button" id="video-stop" value="stop recording">
     <a id="video-download">download</a>
 
+    <div>
+      <p>cardMdl offset</p>
+      <input id="crdMdlX" type="number" placeholder="x">
+      <input id="crdMdlY" type="number" placeholder="y">
+      <input id="crdMdlZ" type="number" placeholder="z">
+      <input type="button" onclick="changeMdlVal()">
+    </div>
+    <script>
+      function changeMdlVal(){
+        for(const item of window.simulation.objects){
+          console.log(item.class);
+          if(item.class == 'card'){
+            let x = document.getElementById('crdMdlX').value;
+            let y = document.getElementById('crdMdlY').value;
+            let z = document.getElementById('crdMdlZ').value;
+            item.mdlOffset.set(x,y,z);
+          }
+        }
+      }
+    </script>
+
     <hr>
 
     <div class="section">

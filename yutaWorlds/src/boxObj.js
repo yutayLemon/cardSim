@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import {addDebugPoint,updateDebug,debugArrow} from './debug.js'
-import {resolveCollision} from './colideDetect.js'
 import {addOmega} from './colideMath.js';
 import {exportObjBox} from "./import.js";
 
@@ -49,6 +48,7 @@ class boxObj{
             deltaRotation: new THREE.Vector3(0,0,0)
         }
         
+        this.mdlOffset = new THREE.Vector3(0,0,0);
         this.scale = 1;
 
         this.restitutionFactor = 0.8;
@@ -156,6 +156,15 @@ class boxObj{
 
     //debug
     debugSetUp(scene){
+        const boxGemo = new THREE.BoxGeometry(this.width,this.height,this.thickness);
+        const boxMet = new THREE.MeshStandardMaterial({
+            color:this.color,
+            transparent:true,
+            opacity:0.5,
+            wireframe:false
+        });
+        this.THREEjsBoundingBox = new THREE.Mesh(boxGemo,boxMet);
+        scene.add(this.THREEjsBoundingBox);
         this.debugArrows = {
             vel:new debugArrow(0xff0000,scene),
             acc:new debugArrow(0x00ff00,scene),
@@ -176,10 +185,6 @@ class boxObj{
         this.debugArrows.impulse.updateArrow(this.position);
         this.debugArrows.angimplse.updateArrow(this.position);
         this.debugArrows.coliNorm.updateArrow(this.coliNorm);
-    }
-
-    updateColide(otherObj){
-        resolveCollision(this,otherObj);
     }
 
     updateBoxDebug(){
@@ -228,12 +233,25 @@ class boxObj{
     }
 
     updateThreeJS(){
+        if(this.THREEjsBoundingBox){
+            this.THREEjsBoundingBox.position.copy(this.position);
+            const tempMatrix4 = new THREE.Matrix4().setFromMatrix3(this.correctionRotationMatrx.clone().multiply(this.rotationMatrx));
+            this.eularRotation = new THREE.Euler().setFromRotationMatrix(tempMatrix4);
+            this.THREEjsBoundingBox.rotation.copy(this.eularRotation);
+
+            if(this.THREEjsBoundingBox.material && this.THREEjsBoundingBox.material.color){
+                this.THREEjsBoundingBox.material.color.set(this.color);
+            }
+        }
+        //this.threeJsObj.position.copy(this.position.sub(this.mdlOffset));
         this.threeJsObj.position.copy(this.position);
         //WTF FUCK why 4D
-        const tempMatrix4 = new THREE.Matrix4().setFromMatrix3(this.correctionRotationMatrx.clone().multiply(this.rotationMatrx));
+        let totalRotation = this.correctionRotationMatrx.clone().multiply(this.rotationMatrx);
+        const tempMatrix4 = new THREE.Matrix4().setFromMatrix3(totalRotation);
         this.eularRotation = new THREE.Euler().setFromRotationMatrix(tempMatrix4);
         this.threeJsObj.rotation.copy(this.eularRotation);
 
+        this.threeJsObj.position.add(this.mdlOffset.clone().applyMatrix3(totalRotation));
         if(this.threeJsObj.material && this.threeJsObj.material.color){
              this.threeJsObj.material.color.set(this.color);
         }

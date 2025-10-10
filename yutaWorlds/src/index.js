@@ -3,7 +3,7 @@ import {allInitForCycle,allApplyCorrection,allUpdateThreeJS,allUpdateRotation,al
 import {cardObj,playerObj,approxPlane} from './cardObj'
 import {state,initKeyInput} from './keyInput.js'
 import {updateDebug,initDebug,debugVertex,debugP} from './debug.js'
-import {cloideBox2Box,resolveCollision,updateArrCollisions} from './colideDetect.js'
+import {collsionResolver} from './colideDetect.js'
 import {makeCardMdl,loadCardMdl} from './cardMdl.js'
 import {initScene} from './sceneSetUp.js'
 import {exportAll} from './import.js'
@@ -12,11 +12,12 @@ import {initRecorder} from './recording.js';
 
 
 let player,floor,tick,cards;
+let colisionObj;
 
 function main(){
   window.simulation.state.simPause = false;
 //WTF
-//        const euler = new THREE.Euler(Math.PI*0.25, Math.PI*0.25, 0, 'XYZ');
+//       const euler = new THREE.Euler(Math.PI*0.25, Math.PI*0.25, 0, 'XYZ');
 //        const euler = new THREE.Euler( Math.PI*0.25,0, 0, 'XYZ');
 const euler = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math.random()*Math.PI, 'XYZ');
 
@@ -24,8 +25,8 @@ const euler = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math.
         const rotationMatrix3 = new THREE.Matrix3().setFromMatrix4(rotationMatrix4);
 
 //const euler1 = new THREE.Euler(-Math.PI*0.15,0, 0, 'XYZ');
-//const euler1 = new THREE.Euler(0,0, 0, 'XYZ');
-const euler1 = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math.random()*Math.PI, 'XYZ');
+const euler1 = new THREE.Euler(0,0, 0, 'XYZ');
+//const euler1 = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math.random()*Math.PI, 'XYZ');
         const rotationMatrix41 = new THREE.Matrix4().makeRotationFromEuler(euler1);
         const rotationMatrix31 = new THREE.Matrix3().setFromMatrix4(rotationMatrix41);
 
@@ -56,6 +57,7 @@ renderer.render(scene,camera);
 renderer.setAnimationLoop(animate);
 
 window.simulation.objects = cards.concat([player]);//.concat([floor]);//TODO DEBUGGG
+colisionObj = new collsionResolver(window.simulation.objects);
 }
 
 
@@ -105,8 +107,7 @@ function proccessObjects(objArr,h){
 
   allUpdateApplieForce(objArr);
 
-  updateArrCollisions(objArr);
-  playerCollsionColoring(objArr);
+  colisionObj.updateArrCollisions();
 
   allApplyCorrection(objArr);
 
@@ -117,17 +118,6 @@ function proccessObjects(objArr,h){
   allUpdateThreeJS(objArr);
 }
 
-function playerCollsionColoring(arr){
-  if(cloideBox2Box(cards[0],player).colide){
-      player.color = 0x0000ff;
-    }else{
-      player.color = 0x00ff00;
-    }
-    if(cloideBox2Box(cards[1],player).colide){
-      player.color = 0xff00ff;
-    }else{
-      player.color = 0x00ff00;
-    }
-}
+
 
 export {scene,animate};
