@@ -208,19 +208,23 @@ class boxObj{
         }
     }
 
-    updateTorque(){
+    updateTorque(h){
     }
     
-    updateForce(){
+    updateForce(h){
     }
 
     updateApplieForce(h){
-        //this.acc.copy(this.force.clone().divideScalar(this.mass).multiplyScalar(h));
-        //this.vel.add(this.acc.clone().multiplyScalar(h));
+        //console.log(this.force);
+        this.acc.set((this.force.x*h)/this.mass,(this.force.y*h)/this.mass,(this.force.z*h)/this.mass);
+        this.vel.add(this.acc.clone().multiplyScalar(h));
     }
 
     updatePos(h){
         this.position.add(this.vel.clone().multiplyScalar(h));
+        if(isNaN(this.position.x)){
+            console.error("position NaN",this.vel,h);
+        }
         ///update omega from impulse
         //this.omega = this.rotationMatrx*this.inertiaTensorInverse*this.rotationMatrx^T*this.angMomentum;
         
@@ -260,15 +264,15 @@ class boxObj{
         }
     }
 
-    updatePositionCorrection(){
+    updatePositionCorrection(h){
 
     }
 
-    applyCorrection(){
-        this.vel.add(this.correction.deltaVel);
-        this.position.add(this.correction.deltaPos);
+    applyCorrection(h){
+        this.vel.add(this.correction.deltaVel.clone().multiplyScalar(h));
+        this.position.add(this.correction.deltaPos.clone().multiplyScalar(h));
         
-        this.omega.add(this.correction.deltaOmega);
+        this.omega.add(this.correction.deltaOmega.clone().multiplyScalar(h));
         addOmega(this.rotationMatrx,this.correction.deltaRotation);
     }
 

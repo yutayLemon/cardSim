@@ -4,7 +4,8 @@ import {state} from './keyInput.js'
 import {addDebugPoint} from './debug.js'
 import {makeCardMdl,loadCardMdl,woodPlane} from './cardMdl.js'
 
-let g = new THREE.Vector3(0,-0.1,0);
+let g = new THREE.Vector3(0,-0.01,0);
+//let g = new THREE.Vector3(0,0,0);
 
 class cardObj extends boxObj{
     constructor(scene,size){
@@ -49,7 +50,7 @@ class cardObj extends boxObj{
 
     updateForce(){
         this.force.set(0,0,0);
-        this.force.add(g.multiplyScalar(this.mass));
+        this.force.add(g.clone().multiplyScalar(this.mass));
         //this.force = scaleVect(this.mass,g);
     }
 }
@@ -135,7 +136,6 @@ class playerObj extends boxObj{
     }
 
     updateForce(){
-        this.force.set(0,0,0);
         this.vel.set(0,0,0);
         let ff = 0.000001;
         
@@ -186,7 +186,7 @@ class approxPlane extends boxObj{
         this.restitutionFactor = 1;
         this.position.set(0,0,0);
         this.mass = Infinity;
-
+        this.THREEjsBoundingBox.visible = false;
         this.surfaceNormal = [
             new THREE.Vector3(0,1,0)
         ];

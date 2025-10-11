@@ -137,22 +137,23 @@ function evalCorrectionVal(collsion){//time for impulse derives velocity to sepe
     //TDOOO
    let obj1 = collsion.obj1;
    let obj2 = collsion.obj2;
-   if(obj1.geometryClass == "plane" || obj2.geometryClass == "plane"){
-    console.log("plabne vealll:",collsion);
-   }
 
 
     let velPoint1 = obj1.vel.clone().add(obj1.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj1.omega.clone().add(obj1.correction.deltaOmega),collsion.contactP1));
     let velPoint2 = obj2.vel.clone().add(obj2.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj2.omega.clone().add(obj2.correction.deltaOmega),collsion.contactP2));
-
     let relativeVel = velPoint2.clone().sub(velPoint1);
-    let h = 1;
-    let relativeAlongNormal = Math.abs(relativeVel.dot(collsion.normal))*h;
 
+    let relativeAlongNormal = Math.abs(relativeVel.dot(collsion.normal));
+    if(isNaN(relativeAlongNormal)){
+        console.error("relative vel NaN:",relativeVel,collsion.normal);
+    }
     
     //let diff = collsion.overlap + Math.abs(relativeAlongNormal);
     //let diff = collsion.overlap;
     let diff = collsion.overlap + relativeAlongNormal;
+    if(isNaN(diff)){
+        console.log("diff is NaN:"+collsion.overlap+relativeAlongNormal);
+    }
     let deltaX1 = diff * ((obj2.mass)/(obj1.mass + obj2.mass));
     let deltaX2 = diff * ((obj1.mass)/(obj1.mass + obj2.mass));
     if(obj1.mass + obj2.mass == Infinity){
@@ -165,6 +166,9 @@ function evalCorrectionVal(collsion){//time for impulse derives velocity to sepe
             deltaX1 = 0;
         }
     }
+    if(isNaN(deltaX1)){
+        console.log("delta1 error:",diff,obj1.mass,obj2.mass);
+    }
     let colNormal = collsion.normal.clone();
     if(obj2.position.clone().sub(obj1.position).dot(colNormal) < 0){
         colNormal.multiplyScalar(-1);
@@ -172,8 +176,12 @@ function evalCorrectionVal(collsion){//time for impulse derives velocity to sepe
 
     let deltaPos1 = colNormal.clone().multiplyScalar(-deltaX1);
     let deltaPos2 = colNormal.clone().multiplyScalar(deltaX2);
-    console.log("delta---------->",deltaPos1,deltaPos2,colNormal,diff);
-
+    if(isNaN(deltaPos1.x)){
+        console.log("correction delta obj1:" + colNormal.x + "," + deltaX1);
+    }
+    if(isNaN(deltaPos2.x)){
+        console.log("correction delta obj2:" + colNormal.x + "," + deltaX2);
+    }
     //TODO account for vel change
     obj1.correction.deltaPos.add(deltaPos1);
     obj2.correction.deltaPos.add(deltaPos2);

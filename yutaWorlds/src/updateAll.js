@@ -1,12 +1,12 @@
 
-function allUpdateGlobalPos(arr){for(const item of arr){
-    item.updateGlobalPos();}}
+function allUpdateGlobalPos(arr,h){for(const item of arr){
+    item.updateGlobalPos(h);}}
 
-function allUpdateForce(arr){for(const item of arr){
-    item.updateForce();}}
+function allUpdateForce(arr,h){for(const item of arr){
+    item.updateForce(h);}}
 
-function allUpdateTorque(arr){for(const item of arr){
-    item.updateTorque();}}
+function allUpdateTorque(arr,h){for(const item of arr){
+    item.updateTorque(h);}}
 
 function allUpdateApplieForce(arr,h){for(const item of arr){
     item.updateApplieForce(h);}}
@@ -17,11 +17,11 @@ function allUpdatePos(arr,h){for(const item of arr){
 function allUpdateRotation(arr,h){for(const item of arr){
     item.updateRotation(h);}}
 
-function allUpdateThreeJS(arr){for(const item of arr){
-    item.updateThreeJS();}}
+function allUpdateThreeJS(arr,h){for(const item of arr){
+    item.updateThreeJS(h);}}
 
-function allApplyCorrection(arr){for(const item of arr){
-    item.applyCorrection();}}
+function allApplyCorrection(arr,h){for(const item of arr){
+    item.applyCorrection(h);}}
 
 function allInitForCycle(arr){for(const item of arr){
     item.initForCycle();}}

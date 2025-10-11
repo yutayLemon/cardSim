@@ -55,13 +55,6 @@ class collsionResolver{
     resolveCollisionImpulse(obj1,obj2){
     this.init(obj1,obj2,obj1.geometryClass+'-'+obj2.geometryClass);
     let colide = this.testCollsion();
-    console.log(obj1.class+'-'+obj2.class,obj1.geometryClass+'-'+obj2.geometryClass);
-    if(this.class == "plane-box" || this.class == "box-plane"){
-        console.log(obj1.class+'-'+obj2.class);
-        if(colide){
-            console.log("plane:)");
-        }
-    }
     if(colide){
         
         let impulse = this.impulseCalc();
@@ -71,8 +64,6 @@ class collsionResolver{
         }
         applyImpulse(this,impulse.val);
         evalCorrectionVal(this);
-        console.log("overlap:",obj1.correction.deltaPos,obj2.correction.deltaPos);
-        console.log(this.overlap);
     }
     }
 

@@ -60,7 +60,7 @@ renderer.render(scene,camera);
 renderer.setAnimationLoop(animate);
 
 window.simulation.objects = cards.concat([player]).concat([floor]);//TODO DEBUGGG
-window.simulation.objects = cards.concat([floor]);//TODO DEBUGGG
+//window.simulation.objects = cards.concat([floor]);//TODO DEBUGGG
 colisionObj = new collsionResolver(window.simulation.objects);
 }
 
@@ -102,22 +102,26 @@ function animate(time){
 
 
 function proccessObjects(objArr,h){
+  let n = 10;
+  h/=n;
+  player.updateDirVects(camera);
+  for(let i = 0;i<n;i++){
   allInitForCycle(objArr);
   allUpdateGlobalPos(objArr);
-  player.updateDirVects(camera);
 
-  allUpdateForce(objArr);
-  allUpdateTorque(objArr);
+  allUpdateForce(objArr,h);
+  allUpdateTorque(objArr,h);
 
-  allUpdateApplieForce(objArr);
+  allUpdateApplieForce(objArr,h);
 
   colisionObj.updateArrCollisions();
 
-  allApplyCorrection(objArr);
+  allApplyCorrection(objArr,h);
 
   allUpdatePos(objArr,h);
-  allUpdateRotation(objArr,h);
-
+  allUpdateRotation(objArr,h);  
+  }
+  
   updateDebug(objArr);
   allUpdateThreeJS(objArr);
 }
