@@ -55,20 +55,30 @@ class collsionResolver{
     resolveCollisionImpulse(obj1,obj2){
     this.init(obj1,obj2,obj1.geometryClass+'-'+obj2.geometryClass);
     let colide = this.testCollsion();
+    console.log(obj1.class+'-'+obj2.class,obj1.geometryClass+'-'+obj2.geometryClass);
+    if(this.class == "plane-box" || this.class == "box-plane"){
+        console.log(obj1.class+'-'+obj2.class);
+        if(colide){
+            console.log("plane:)");
+        }
+    }
     if(colide){
-        console.log(this.collsionClass);
+        
         let impulse = this.impulseCalc();
         if(impulse.fail || isNaN(impulse.val)){
+            evalCorrectionVal(this);
             return;
         }
         applyImpulse(this,impulse.val);
         evalCorrectionVal(this);
+        console.log("overlap:",obj1.correction.deltaPos,obj2.correction.deltaPos);
+        console.log(this.overlap);
     }
     }
 
     updateArrCollisions(){
     for(let i = 0;i<this.objects.length;i++){
-        for(let j = 0;j<i;j++){
+        for(let j = i;j<this.objects.length;j++){
             if(i!=j){
                 this.resolveCollisionImpulse(this.objects[i],this.objects[j]);
             }
@@ -77,7 +87,7 @@ class collsionResolver{
     }
 
     impulseCalc(){
-        return getImpulse(this,1);
+        return getImpulse(this,0.8);
     }
 
 
@@ -93,22 +103,28 @@ class collsionResolver{
         }
         this.overlap = Infinity;
         let minVer;
-        let norm = plane.surfaceNormal[0];
         //plane to box
         //TODO clean up
+
+
+
+        let planecolide = false;
         for(const node of box.verticeArrGlobal){
-            let dist = node.clone().sub(plane.position).dot(norm);
-            if(dist < this.overlap){
-                this.overlap = dist;
-                minVer = node;
+            if(node.y <= plane.position.y){
+                if(node.y-plane.position.y < this.overlap){
+                    this.overlap = node.y-plane.position.y;
+                    minVer = node;
+                }
+                planecolide = true;
             }
         }
-        if(this.overlap > 0){
+        if(!planecolide){
             return false;   
         }
-        let planeContP = minVer.clone().sub(plane.position).sub(norm.clone().multiplyScalar(this.overlap));
+        this.overlap = Math.abs(this.overlap);
+        let planeContP = new THREE.Vector3(0,0,0);
         let boxContP = minVer.clone().sub(box.position);
-        this.normal = norm;
+        this.normal = plane.globalSurfaceNormal[0];
         if(this.obj1.class == "plane"){
             this.contactP1 = planeContP;
             this.contactP2 = boxContP;
@@ -226,7 +242,7 @@ class collsionResolver{
             this.int1 = int1;
             this.int2 = int2;
             this.overlap = overlapTest.val;
-            this.normal.set(normal.x,normal.y,normal.z);
+            this.normal.set(newNorm.x,newNorm.y,newNorm.z);
         } 
         return true;
     }

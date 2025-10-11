@@ -5,6 +5,9 @@ import {exportObjBox} from "./import.js";
 
 class boxObj{
     constructor(scene,size,faceRatio,thickRatio){
+        this.name = "box";
+        this.class = "box";
+        this.geometryClass = "box";
         this.width = size;
         this.faceRatio = faceRatio;
         this.thickRatio = thickRatio;
@@ -212,7 +215,7 @@ class boxObj{
     }
 
     updateApplieForce(h){
-        this.acc.copy(this.force.clone().divideScalar(this.mass).multiplyScalar(h));
+        //this.acc.copy(this.force.clone().divideScalar(this.mass).multiplyScalar(h));
         //this.vel.add(this.acc.clone().multiplyScalar(h));
     }
 

@@ -82,7 +82,7 @@ function addMatrx(subject,Matrix){
 
 function getImpulse(collision,eFact){//assumed that colidion normal is unit
 
-    let normal = collision.normal;
+    let normal = collision.normal.clone();
     let contact1 = collision.contactP1;
     let contact2 = collision.contactP2;
     let obj1 = collision.obj1;
@@ -92,9 +92,8 @@ function getImpulse(collision,eFact){//assumed that colidion normal is unit
         normal.multiplyScalar(-1);
     }
 
-    let velp1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega,contact1));
-    let velp2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega,contact2));
-
+    let velp1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega.clone().add(obj1.correction.deltaOmega),contact1));
+    let velp2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega.clone().add(obj2.correction.deltaOmega),contact2));
     let relativeVel = velp2.clone().sub(velp1);
 
     let relativeAlongN = relativeVel.dot(normal);
@@ -121,7 +120,6 @@ function getImpulse(collision,eFact){//assumed that colidion normal is unit
 
     den += collision.normal.dot(impInvRcrossR1);
     den += collision.normal.dot(impInvRcrossR2);
-
     return {fail:false,val:impulse/den};
 }
 
@@ -135,23 +133,50 @@ function evalCorrectionVal(collsion){//time for impulse derives velocity to sepe
 
     let resolutionTime = (Math.abs(collsion.overlap) - relativeAlongNormal)/relativeAlongNormal;
     */
+
+    //TDOOO
    let obj1 = collsion.obj1;
    let obj2 = collsion.obj2;
+   if(obj1.geometryClass == "plane" || obj2.geometryClass == "plane"){
+    console.log("plabne vealll:",collsion);
+   }
 
-    let deltaX1 = collsion.overlap * ((obj2.mass)/(obj1.mass + obj2.mass));
-    let deltaX2 = collsion.overlap * ((obj1.mass)/(obj1.mass + obj2.mass));
 
-    let colNormal = collsion.normal;
+    let velPoint1 = obj1.vel.clone().add(obj1.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj1.omega.clone().add(obj1.correction.deltaOmega),collsion.contactP1));
+    let velPoint2 = obj2.vel.clone().add(obj2.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj2.omega.clone().add(obj2.correction.deltaOmega),collsion.contactP2));
+
+    let relativeVel = velPoint2.clone().sub(velPoint1);
+    let h = 1;
+    let relativeAlongNormal = Math.abs(relativeVel.dot(collsion.normal))*h;
+
+    
+    //let diff = collsion.overlap + Math.abs(relativeAlongNormal);
+    //let diff = collsion.overlap;
+    let diff = collsion.overlap + relativeAlongNormal;
+    let deltaX1 = diff * ((obj2.mass)/(obj1.mass + obj2.mass));
+    let deltaX2 = diff * ((obj1.mass)/(obj1.mass + obj2.mass));
+    if(obj1.mass + obj2.mass == Infinity){
+        if(obj2.mass == Infinity){
+            deltaX1 = diff;
+            deltaX2 = 0;
+        }
+        if(obj1.mass == Infinity){
+            deltaX2 = diff;
+            deltaX1 = 0;
+        }
+    }
+    let colNormal = collsion.normal.clone();
     if(obj2.position.clone().sub(obj1.position).dot(colNormal) < 0){
         colNormal.multiplyScalar(-1);
     }
 
-    let deltaPos1 = colNormal.multiplyScalar(-deltaX1);
-    let deltaPos2 = colNormal.multiplyScalar(deltaX2);
+    let deltaPos1 = colNormal.clone().multiplyScalar(-deltaX1);
+    let deltaPos2 = colNormal.clone().multiplyScalar(deltaX2);
+    console.log("delta---------->",deltaPos1,deltaPos2,colNormal,diff);
 
     //TODO account for vel change
-    obj1.correction.deltaPos.set(deltaPos1.x,deltaPos1.y,deltaPos1.z);
-    obj2.correction.deltaPos.set(deltaPos2.x,deltaPos2.y,deltaPos2.z);
+    obj1.correction.deltaPos.add(deltaPos1);
+    obj2.correction.deltaPos.add(deltaPos2);
 
 
 /*
@@ -185,8 +210,8 @@ function applyImpulse(collision,impulse){
 
     let obj1Vel = collision.normal.clone().multiplyScalar(-impulse/obj1.mass);
     let obj2Vel = collision.normal.clone().multiplyScalar(impulse/obj2.mass);
-    obj1.correction.deltaVel.set(obj1Vel.x,obj1Vel.y,obj1Vel.z);
-    obj2.correction.deltaVel.set(obj2Vel.x,obj2Vel.y,obj2Vel.z);
+    obj1.correction.deltaVel.add(obj1Vel);
+    obj2.correction.deltaVel.add(obj2Vel);
 
     let deltaOmega1 = new THREE.Vector3().crossVectors(collision.contactP1,collision.normal);
     deltaOmega1.applyMatrix3(obj1.inertiaTensorInverse)
@@ -196,8 +221,8 @@ function applyImpulse(collision,impulse){
     deltaOmega2.applyMatrix3(obj2.inertiaTensorInverse)
                .multiplyScalar(impulse);
 
-    obj1.correction.deltaOmega.set(deltaOmega1.x,deltaOmega1.y,deltaOmega1.z);
-    obj2.correction.deltaOmega.set(deltaOmega2.x,deltaOmega2.y,deltaOmega2.z);
+    obj1.correction.deltaOmega.add(deltaOmega1);
+    obj2.correction.deltaOmega.add(deltaOmega2);
 }
 
 function distFromPlaneSqu(normal,planePoint,points){

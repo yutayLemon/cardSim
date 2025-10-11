@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {allInitForCycle,allApplyCorrection,allUpdateThreeJS,allUpdateRotation,allUpdatePos,allUpdateGlobalPos,allUpdateForce,allUpdateTorque,allUpdateApplieForce} from './updateAll.js'
-import {cardObj,playerObj,approxPlane} from './cardObj'
+import {cardObj,playerObj,approxPlane,imovable} from './cardObj'
 import {state,initKeyInput} from './keyInput.js'
 import {updateDebug,initDebug,debugVertex,debugP} from './debug.js'
 import {collsionResolver} from './colideDetect.js'
@@ -39,16 +39,19 @@ cards[1].place(new THREE.Vector3(0,1,4),cards[1].vertex.bottomRight[1]);
 cards[0].color = 0xff00ff;
 cards[1].color = 0x00ff00;
 cards[0].vel.set(0,0,0);
-cards[1].vel.set(0,0,-0.03);
+
+cards[0].calcInertia();
+cards[1].vel.set(0,-0.03,0);
 cards[1].rotationMatrx.multiply(rotationMatrix3);
 cards[0].rotationMatrx.multiply(rotationMatrix31);
 cards[1].angMomentum.set(0.05,0.05,0.05);
 
 
 player = new playerObj(scene,0.5);
-player.place(new THREE.Vector3(0,0,0),player.vertex.bottomLeft[0]);
+player.place(new THREE.Vector3(0,1,0),player.vertex.bottomLeft[0]);
 
-//floor = new approxPlane(scene,400);
+floor = new approxPlane(scene,400);
+//floor = new imovable(scene,300);
 
 tick = 0;
 window.simulation.state.step  = false;
@@ -56,7 +59,8 @@ window.simulation.state.step  = false;
 renderer.render(scene,camera);
 renderer.setAnimationLoop(animate);
 
-window.simulation.objects = cards.concat([player]);//.concat([floor]);//TODO DEBUGGG
+window.simulation.objects = cards.concat([player]).concat([floor]);//TODO DEBUGGG
+window.simulation.objects = cards.concat([floor]);//TODO DEBUGGG
 colisionObj = new collsionResolver(window.simulation.objects);
 }
 
