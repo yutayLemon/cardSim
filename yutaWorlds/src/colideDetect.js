@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {solveLinear,transformToCordinate,reConstruct,getImpulse,applyImpulse,evalCorrectionVal} from './colideMath.js'
+import {calcFrictionImpulse,solveLinear,transformToCordinate,reConstruct,getImpulse,calcCollsionImpulse,evalCorrectionVal} from './colideMath.js'
 import {debugPrintContact,debugPrintEdge} from './debug.js'
 
 //one collsion reolver
@@ -18,6 +18,23 @@ class collsionResolver{
         this.int2;
         this.info;
         this.objects = arr;
+    }
+
+    
+    resolveCollisionImpulse(obj1,obj2){
+        this.init(obj1,obj2,obj1.geometryClass+'-'+obj2.geometryClass);
+        let colide = this.testCollsion();
+        if(colide){
+        
+            let impulse = this.impulseCalc();
+            if(impulse.fail || isNaN(impulse.val)){
+                evalCorrectionVal(this);
+                return;
+            }
+            calcCollsionImpulse(this,impulse.val);
+            //calcFrictionImpulse(this,impulse.val);
+            evalCorrectionVal(this);
+        }
     }
 
     init(obj1,obj2,colClass){
@@ -51,22 +68,6 @@ class collsionResolver{
         }
     }
 
-    
-    resolveCollisionImpulse(obj1,obj2){
-    this.init(obj1,obj2,obj1.geometryClass+'-'+obj2.geometryClass);
-    let colide = this.testCollsion();
-    if(colide){
-        
-        let impulse = this.impulseCalc();
-        if(impulse.fail || isNaN(impulse.val)){
-            evalCorrectionVal(this);
-            return;
-        }
-        applyImpulse(this,impulse.val);
-        evalCorrectionVal(this);
-    }
-    }
-
     updateArrCollisions(){
     for(let i = 0;i<this.objects.length;i++){
         for(let j = i;j<this.objects.length;j++){
@@ -78,7 +79,7 @@ class collsionResolver{
     }
 
     impulseCalc(){
-        return getImpulse(this,0.8);
+        return getImpulse(this,1);
     }
 
 
@@ -93,28 +94,30 @@ class collsionResolver{
             plane = this.obj2;
         }
         this.overlap = Infinity;
-        let minVer;
-        //plane to box
-        //TODO clean up
-
-
-
+        let minVer = [];
+        
         let planecolide = false;
         for(const node of box.verticeArrGlobal){
             if(node.y <= plane.position.y){
                 if(node.y-plane.position.y < this.overlap){
                     this.overlap = node.y-plane.position.y;
-                    minVer = node;
                 }
+                minVer.push(node);
                 planecolide = true;
             }
         }
         if(!planecolide){
             return false;   
         }
+        let contNode = new THREE.Vector3(0,0,0);
+        let i = 0;
+        for(;i<minVer.length;i++){
+            contNode.add(minVer[i]);
+        }
+        contNode.multiplyScalar(1/i);
         this.overlap = Math.abs(this.overlap);
         let planeContP = new THREE.Vector3(0,0,0);
-        let boxContP = minVer.clone().sub(box.position);
+        let boxContP = contNode.clone().sub(box.position);
         this.normal = plane.globalSurfaceNormal[0];
         if(this.obj1.class == "plane"){
             this.contactP1 = planeContP;

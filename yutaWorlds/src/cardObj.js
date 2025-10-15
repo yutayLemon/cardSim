@@ -4,12 +4,14 @@ import {state} from './keyInput.js'
 import {addDebugPoint} from './debug.js'
 import {makeCardMdl,loadCardMdl,woodPlane} from './cardMdl.js'
 
-let g = new THREE.Vector3(0,-0.01,0);
+let g = new THREE.Vector3(0,-0.05,0);
 //let g = new THREE.Vector3(0,0,0);
-
+const cardWidthToHeight = 1.5;
+const cardWidthToThick = 0.04;
 class cardObj extends boxObj{
     constructor(scene,size){
-        super(scene,size,1.5,0.04);
+        super(scene,size,cardWidthToHeight,cardWidthToThick);
+        this.surfaceMaterial = "paper";
         this.name = "card";
         this.class = "card";
         this.geometryClass = "box";
@@ -17,7 +19,7 @@ class cardObj extends boxObj{
         this.mdlOffset = new THREE.Vector3(0.029,-0.06,0.01);
 
         this.color = 0xffff00;
-        this.mass = 0.6;
+        this.mass = 1.6;
         this.loadModel(scene);
         this.calcInertia();
     }
@@ -93,6 +95,8 @@ class playerObj extends boxObj{
         this.geometryClass = "box";
 
         this.color = 0xff0000;
+
+        this.surfaceMaterial = "plastic";
 
         this.fowardVect = new THREE.Vector3(1,0,0);
         this.rightVect = new THREE.Vector3(0,0,1);
@@ -172,13 +176,13 @@ class playerObj extends boxObj{
 class approxPlane extends boxObj{
     //collsion resolution
     constructor(scene,size){
-        super(scene,size,0.005,1);
+        super(scene,size,1,1);
         this.correctionRotationMatrx.set(
                     1,0,0,
                     0,Math.cos(Math.PI*0.5),-Math.sin(Math.PI*0.5),
                     0,Math.sin(Math.PI*0.5),Math.cos(Math.PI*0.5)
                 );
-        
+        this.surfaceMaterial = "wood";
         this.class = "plane";
         this.name = "plane";
         this.geometryClass = "plane";
@@ -205,4 +209,4 @@ class approxPlane extends boxObj{
     }
 }
 
-export {cardObj,playerObj,approxPlane,imovable}
+export {cardObj,playerObj,approxPlane,imovable,cardWidthToHeight,cardWidthToThick}

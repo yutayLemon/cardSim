@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {allInitForCycle,allApplyCorrection,allUpdateThreeJS,allUpdateRotation,allUpdatePos,allUpdateGlobalPos,allUpdateForce,allUpdateTorque,allUpdateApplieForce} from './updateAll.js'
+import {allDamp,allInitForCycle,allApplyCorrection,allUpdateThreeJS,allUpdateRotation,allUpdatePos,allUpdateGlobalPos,allUpdateForce,allUpdateTorque,allUpdateApplieForce} from './updateAll.js'
 import {cardObj,playerObj,approxPlane,imovable} from './cardObj'
 import {state,initKeyInput} from './keyInput.js'
 import {updateDebug,initDebug,debugVertex,debugP} from './debug.js'
@@ -9,6 +9,7 @@ import {initScene} from './sceneSetUp.js'
 import {exportAll} from './import.js'
 import { step } from 'three/src/nodes/TSL.js';
 import {initRecorder} from './recording.js';
+import {twoCard} from './twrBuilder.js';
 
 
 let player,floor,tick,cards;
@@ -59,7 +60,7 @@ window.simulation.state.step  = false;
 renderer.render(scene,camera);
 renderer.setAnimationLoop(animate);
 
-window.simulation.objects = cards.concat([player]).concat([floor]);//TODO DEBUGGG
+window.simulation.objects = cards.concat([player]).concat([floor]).concat(twoCard(scene,1.5,1.5,new THREE.Vector3(1,0.2,0)));//TODO DEBUGGG
 //window.simulation.objects = cards.concat([floor]);//TODO DEBUGGG
 colisionObj = new collsionResolver(window.simulation.objects);
 }
@@ -103,23 +104,25 @@ function animate(time){
 
 function proccessObjects(objArr,h){
   let n = 10;
-  h/=n;
+  let deltaT = h/n;
   player.updateDirVects(camera);
   for(let i = 0;i<n;i++){
   allInitForCycle(objArr);
   allUpdateGlobalPos(objArr);
 
-  allUpdateForce(objArr,h);
-  allUpdateTorque(objArr,h);
+  allUpdateForce(objArr,deltaT);
+  allUpdateTorque(objArr,deltaT);
 
-  allUpdateApplieForce(objArr,h);
+  allUpdateApplieForce(objArr,deltaT);
 
   colisionObj.updateArrCollisions();
 
-  allApplyCorrection(objArr,h);
+  allApplyCorrection(objArr,deltaT);
 
-  allUpdatePos(objArr,h);
-  allUpdateRotation(objArr,h);  
+  allUpdatePos(objArr,deltaT);
+  allUpdateRotation(objArr,deltaT);  
+
+  allDamp(objArr);
   }
   
   updateDebug(objArr);

@@ -47,6 +47,11 @@ document.getElementById('toggle-flow').addEventListener('click', e => {
   window.simulation.camera.flow = true;
 });
 
+document.getElementById('toggle-bounding').addEventListener('change', e => {
+  window.simulation.debug.bounds = e.target.checked;
+});
+
+
 document.getElementById("exportFile").addEventListener('click',()=>{
     exportAll(window.simulation.objects);
 });

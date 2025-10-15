@@ -39,10 +39,15 @@ function reConstruct(vect,n1,n2,normal){
     return res;
 }
 
-function addOmega(matrix,omega){
-    let h = 1;
+function addOmega(matrix,omega,h){
+    //let h = 1;
     //addMatrx(matrix,crossColm(matrix,omega.clone().multiplyScalar(h)));
-    addMatrx(matrix,crossMatrix(omega).multiply(matrix));
+    let newMatrix = crossMatrix(omega).multiplyScalar(h).multiply(matrix);
+
+    //fix to world view
+    //let matrixB = crossMatrix(omega).multiplyScalar(h);
+    //let matrxiA = new THREE.Matrix3().multiplyMatrices(matrix,matrixB);
+    addMatrx(matrix,newMatrix);
 
     const xCol = new THREE.Vector3();
     const yCol = new THREE.Vector3();
@@ -60,6 +65,10 @@ function addOmega(matrix,omega){
     xCol.y, yCol.y, zCol.y,
     xCol.z, yCol.z, zCol.z
   );
+}
+
+function addAngVel(matrix,omega,h){
+    applyRotation(omega,matrix)
 
 }
 
@@ -79,38 +88,73 @@ function addMatrx(subject,Matrix){
     }
 }
 
+function getRelativeVel(collision,normal){
+    let obj1 = collision.obj1;
+    let obj2 = collision.obj2;
+    if(obj2.position.clone().sub(obj1.position).dot(normal) < 0){
+        normal.negate();
+    }
+
+
+    let velPoint1 = obj1.vel.clone().add(obj1.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj1.omega.clone().add(obj1.correction.deltaOmega),collision.contactP1));
+    let velPoint2 = obj2.vel.clone().add(obj2.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj2.omega.clone().add(obj2.correction.deltaOmega),collision.contactP2));
+    let relativeVel = velPoint2.clone().sub(velPoint1);
+
+    let lenAlongNormal = relativeVel.dot(normal);
+    return {lenAlongNormal:lenAlongNormal,relativeVel:relativeVel};
+    //relativeVel - relative VECTOR
+    //normalVel - velocity along normal
+}
+
+function getRelativeVelPreCollission(collision,normal){
+    let obj1 = collision.obj1;
+    let obj2 = collision.obj2;
+    if(obj2.position.clone().sub(obj1.position).dot(normal) < 0){
+        normal.negate();
+    }
+
+
+    let velPoint1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega.clone(),collision.contactP1));
+    let velPoint2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega.clone(),collision.contactP2));
+    let relativeVel = velPoint2.clone().sub(velPoint1);
+
+    let lenAlongNormal = relativeVel.dot(normal);
+    return {lenAlongNormal:lenAlongNormal,relativeVel:relativeVel};
+    //relativeVel - relative VECTOR
+    //normalVel - velocity along normal
+}
+
+
+//TODO
+//Add multi contact point support
+
+//TODO correct normal direction in
+//get impulse
+//calc impulse
 
 function getImpulse(collision,eFact){//assumed that colidion normal is unit
 
-    let normal = collision.normal.clone();
     let contact1 = collision.contactP1;
     let contact2 = collision.contactP2;
     let obj1 = collision.obj1;
     let obj2 = collision.obj2;
-    normal.normalize();
+    let normal = collision.normal.clone();
+    let {lenAlongNormal,relativeVel} = getRelativeVelPreCollission(collision,normal);
     if(obj2.position.clone().sub(obj1.position).dot(normal) < 0){
-        normal.multiplyScalar(-1);
+        normal.negate();
     }
 
-    let velp1 = obj1.vel.clone().add(new THREE.Vector3().crossVectors(obj1.omega.clone().add(obj1.correction.deltaOmega),contact1));
-    let velp2 = obj2.vel.clone().add(new THREE.Vector3().crossVectors(obj2.omega.clone().add(obj2.correction.deltaOmega),contact2));
-    let relativeVel = velp2.clone().sub(velp1);
-
-    let relativeAlongN = relativeVel.dot(normal);
-    // -> <-
-    // <- <- neg
-
-    if(relativeAlongN > 0){
+    if(lenAlongNormal > 0){
         return {fail:true};
     }
 
-    let impulse = collision.normal.dot(relativeVel.clone().multiplyScalar((-1)*(eFact+1)));
+    let impulse = normal.dot(relativeVel.clone().multiplyScalar((-1)*(eFact+1)));
 
-    let impInvRcrossR1 = new THREE.Vector3().crossVectors(contact1,collision.normal);
+    let impInvRcrossR1 = new THREE.Vector3().crossVectors(contact1,normal);
     impInvRcrossR1.cross(contact1);
     impInvRcrossR1.applyMatrix3(obj1.inertiaTensorInverse);
 
-    let impInvRcrossR2 = new THREE.Vector3().crossVectors(contact2,collision.normal);
+    let impInvRcrossR2 = new THREE.Vector3().crossVectors(contact2,normal);
     impInvRcrossR2.cross(contact2);
     impInvRcrossR2.applyMatrix3(obj2.inertiaTensorInverse);
 
@@ -118,8 +162,7 @@ function getImpulse(collision,eFact){//assumed that colidion normal is unit
     den += 1/obj1.mass;
     den += 1/obj2.mass;
 
-    den += collision.normal.dot(impInvRcrossR1);
-    den += collision.normal.dot(impInvRcrossR2);
+    den += normal.dot(impInvRcrossR1.add(impInvRcrossR2));
     return {fail:false,val:impulse/den};
 }
 
@@ -135,25 +178,19 @@ function evalCorrectionVal(collsion){//time for impulse derives velocity to sepe
     */
 
     //TDOOO
-   let obj1 = collsion.obj1;
-   let obj2 = collsion.obj2;
-
-
-    let velPoint1 = obj1.vel.clone().add(obj1.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj1.omega.clone().add(obj1.correction.deltaOmega),collsion.contactP1));
-    let velPoint2 = obj2.vel.clone().add(obj2.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj2.omega.clone().add(obj2.correction.deltaOmega),collsion.contactP2));
-    let relativeVel = velPoint2.clone().sub(velPoint1);
-
-    let relativeAlongNormal = Math.abs(relativeVel.dot(collsion.normal));
-    if(isNaN(relativeAlongNormal)){
-        console.error("relative vel NaN:",relativeVel,collsion.normal);
-    }
+    let obj1 = collsion.obj1;
+    let obj2 = collsion.obj2;
+    let normal = collsion.normal.clone();
     
+    let {lenAlongNormal,relativeVel} = getRelativeVel(collsion,normal);
+    //normal corrected in function
+    
+    if(obj2.position.clone().sub(obj1.position).dot(normal) < 0){
+        normal.negate();
+    }
     //let diff = collsion.overlap + Math.abs(relativeAlongNormal);
     //let diff = collsion.overlap;
-    let diff = collsion.overlap + relativeAlongNormal;
-    if(isNaN(diff)){
-        console.log("diff is NaN:"+collsion.overlap+relativeAlongNormal);
-    }
+    let diff = collsion.overlap + lenAlongNormal;
     let deltaX1 = diff * ((obj2.mass)/(obj1.mass + obj2.mass));
     let deltaX2 = diff * ((obj1.mass)/(obj1.mass + obj2.mass));
     if(obj1.mass + obj2.mass == Infinity){
@@ -166,71 +203,106 @@ function evalCorrectionVal(collsion){//time for impulse derives velocity to sepe
             deltaX1 = 0;
         }
     }
-    if(isNaN(deltaX1)){
-        console.log("delta1 error:",diff,obj1.mass,obj2.mass);
-    }
-    let colNormal = collsion.normal.clone();
-    if(obj2.position.clone().sub(obj1.position).dot(colNormal) < 0){
-        colNormal.multiplyScalar(-1);
-    }
 
-    let deltaPos1 = colNormal.clone().multiplyScalar(-deltaX1);
-    let deltaPos2 = colNormal.clone().multiplyScalar(deltaX2);
-    if(isNaN(deltaPos1.x)){
-        console.log("correction delta obj1:" + colNormal.x + "," + deltaX1);
-    }
-    if(isNaN(deltaPos2.x)){
-        console.log("correction delta obj2:" + colNormal.x + "," + deltaX2);
-    }
+    let deltaPos1 = normal.clone().multiplyScalar(-deltaX1);
+    let deltaPos2 = normal.clone().multiplyScalar(deltaX2);
     //TODO account for vel change
     obj1.correction.deltaPos.add(deltaPos1);
     obj2.correction.deltaPos.add(deltaPos2);
-
-
-/*
-    //impulse based
-    let velPoint1 = obj1.vel.clone().add(obj1.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj1.omega,collsion.contact.box1));
-    let velPoint2 = obj2.vel.clone().add(obj2.correction.deltaVel).add(new THREE.Vector3().crossVectors(obj2.omega,collsion.contact.box2));
-
-    let relativeVel = velPoint2.clone().sub(velPoint1);
-    let relativeAlongNormal = Math.abs(relativeVel.dot(collsion.normal));
-
-    let resolutionTime = (Math.abs(collsion.overlap) - relativeAlongNormal)/relativeAlongNormal;
-    //let resolutionTime = (Math.abs(collsion.overlap))/relativeAlongNormal;
-
-    let correctionPos1 = obj1.vel.clone().multiplyScalar(resolutionTime);
-    let correctionPos2 = obj2.vel.clone().multiplyScalar(resolutionTime);
-
-    let correctionRotation1 = obj1.omega.clone().add(obj1.correction.deltaOmega).multiplyScalar(resolutionTime);
-    let correctionRotation2 = obj2.omega.clone().add(obj1.correction.deltaOmega).multiplyScalar(resolutionTime);
-
-    obj1.correction.deltaPos.set(correctionPos1.x,correctionPos1.y,correctionPos1.z);
-    obj2.correction.deltaPos.set(correctionPos2.x,correctionPos2.y,correctionPos2.z);
-
-    obj1.correction.deltaRotation.set(correctionRotation1.x,correctionRotation1.y,correctionRotation1.z);
-    obj2.correction.deltaRotation.set(correctionRotation2.x,correctionRotation2.y,correctionRotation2.z);
-    */
 }
 
-function applyImpulse(collision,impulse){
+function calcCollsionImpulse(collision,impulse){
     let obj1 = collision.obj1;
     let obj2 = collision.obj2;
 
-    let obj1Vel = collision.normal.clone().multiplyScalar(-impulse/obj1.mass);
-    let obj2Vel = collision.normal.clone().multiplyScalar(impulse/obj2.mass);
+    let normal = collision.normal.clone();
+    if(obj2.position.clone().sub(obj1.position).dot(normal) < 0){
+        normal.negate();
+    }
+
+    let obj1Vel = normal.clone().multiplyScalar(-impulse/obj1.mass);
+    let obj2Vel = normal.clone().multiplyScalar(impulse/obj2.mass);
     obj1.correction.deltaVel.add(obj1Vel);
     obj2.correction.deltaVel.add(obj2Vel);
 
-    let deltaOmega1 = new THREE.Vector3().crossVectors(collision.contactP1,collision.normal);
+    let deltaOmega1 = new THREE.Vector3().crossVectors(collision.contactP1,normal);
     deltaOmega1.applyMatrix3(obj1.inertiaTensorInverse)
                .multiplyScalar(-impulse);
 
-    let deltaOmega2 = new THREE.Vector3().crossVectors(collision.contactP2,collision.normal);
+    let deltaOmega2 = new THREE.Vector3().crossVectors(collision.contactP2,normal);
     deltaOmega2.applyMatrix3(obj2.inertiaTensorInverse)
                .multiplyScalar(impulse);
 
     obj1.correction.deltaOmega.add(deltaOmega1);
     obj2.correction.deltaOmega.add(deltaOmega2);
+}
+
+function getFrictionFactor(obj1,obj2){
+    let friction = window.simulation.friction[obj1.surfaceMaterial+'ON'+obj2.surfaceMaterial];
+    if(friction == undefined){
+        friction = window.simulation.friction[obj2.surfaceMaterial+'ON'+obj1.surfaceMaterial];
+    } 
+    return {static:friction.static,dynamic:friction.dynamic};
+}
+
+function calcFrictionImpulse(collision,impulse){
+    let obj1 = collision.obj1;
+    let obj2 = collision.obj2;
+    let normal = collision.normal.clone();
+    if(obj2.position.clone().sub(obj1.position).dot(normal) < 0){
+        normal.negate();
+    }
+    let {lenAlongNormal,relativeVel} = getRelativeVel(collision,normal);
+    //nromal corrected in relative vel
+
+
+    if(obj2.position.clone().sub(obj1.position).dot(normal) < 0){
+        normal.negate();
+    }
+    
+    let tangent = relativeVel.clone();
+    tangent.sub(normal.clone().multiplyScalar(relativeVel.dot(normal)));
+    if(tangent.lengthSq() == 0){
+        return;
+    }
+    tangent.normalize();
+
+    let frictionConstants = getFrictionFactor(collision.obj1,collision.obj2);
+    let staticImpulse = frictionConstants.static*Math.abs(impulse)*1.5;
+    let dynamicImpulse = frictionConstants.dynamic*Math.abs(impulse)*1.5;
+
+    let frictionImpulse1;
+    let frictionImpulse2;
+    if(obj1.mass*relativeVel.dot(tangent) <= staticImpulse){
+        frictionImpulse1 = tangent.clone();
+        frictionImpulse1.multiplyScalar(-1*obj1.mass*relativeVel.dot(tangent));
+    }else{
+        frictionImpulse1 = tangent.clone();
+        frictionImpulse1.multiplyScalar(-1*dynamicImpulse);
+    }
+
+    if(obj2.mass*relativeVel.dot(tangent) <= staticImpulse){
+        frictionImpulse2 = tangent.clone();
+        frictionImpulse2.multiplyScalar(-1*obj2.mass*relativeVel.dot(tangent));
+    }else{
+        frictionImpulse2 = tangent.clone();
+        frictionImpulse2.multiplyScalar(-1*dynamicImpulse);
+    }
+
+    obj1.correction.deltaVel.sub(frictionImpulse1.clone().multiplyScalar(1/obj1.mass));
+    obj2.correction.deltaVel.sub(frictionImpulse2.clone().multiplyScalar(1/obj2.mass));
+
+    let delatOmega1 = new THREE.Vector3().crossVectors(collision.contactP1,normal);
+    delatOmega1.applyMatrix3(obj1.inertiaTensorInverse)
+               .multiplyScalar(frictionImpulse1.dot(tangent));
+
+    let delatOmega2 = new THREE.Vector3().crossVectors(collision.contactP2,normal);
+    delatOmega2.applyMatrix3(obj2.inertiaTensorInverse)
+               .multiplyScalar(frictionImpulse2.dot(tangent));
+    
+    //obj1.correction.deltaOmega.sub(delatOmega1);
+    //obj2.correction.deltaOmega.sub(delatOmega2);
+    return;
 }
 
 function distFromPlaneSqu(normal,planePoint,points){
@@ -260,4 +332,4 @@ function applyRotation(rotx,roty,rotz,matrix){
 
 
 
-export {applyRotation,solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse,applyImpulse,evalCorrectionVal}
+export {calcFrictionImpulse,applyRotation,solveLinear,transformToCordinate,reConstruct,addOmega,crossMatrix,addMatrx,getImpulse,calcCollsionImpulse,evalCorrectionVal}

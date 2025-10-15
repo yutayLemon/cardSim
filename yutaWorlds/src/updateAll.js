@@ -26,4 +26,12 @@ function allApplyCorrection(arr,h){for(const item of arr){
 function allInitForCycle(arr){for(const item of arr){
     item.initForCycle();}}
 
-export {allInitForCycle,allApplyCorrection,allUpdateThreeJS,allUpdateRotation,allUpdatePos,allUpdateGlobalPos,allUpdateForce,allUpdateTorque,allUpdateApplieForce}
+function allDamp(arr){for(const item of arr){
+    let factor = 0.98;
+    //item.vel.multiplyScalar(factor);
+    item.omega.multiplyScalar(factor);
+}}
+
+
+
+export {allDamp,allInitForCycle,allApplyCorrection,allUpdateThreeJS,allUpdateRotation,allUpdatePos,allUpdateGlobalPos,allUpdateForce,allUpdateTorque,allUpdateApplieForce}

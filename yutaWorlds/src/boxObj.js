@@ -16,7 +16,7 @@ class boxObj{
         this.thickness = this.width * this.thickRatio;
 
         this.position = new THREE.Vector3(0,0,0);
-
+        this.surfaceMaterial = "plastic";
 
         this.mass = 1;
 
@@ -222,9 +222,6 @@ class boxObj{
 
     updatePos(h){
         this.position.add(this.vel.clone().multiplyScalar(h));
-        if(isNaN(this.position.x)){
-            console.error("position NaN",this.vel,h);
-        }
         ///update omega from impulse
         //this.omega = this.rotationMatrx*this.inertiaTensorInverse*this.rotationMatrx^T*this.angMomentum;
         
@@ -236,11 +233,12 @@ class boxObj{
     }
 
     updateRotation(h){
-        addOmega(this.rotationMatrx,this.omega.clone().multiplyScalar(h));
+        addOmega(this.rotationMatrx,this.omega.clone(),h);
     }
 
     updateThreeJS(){
         if(this.THREEjsBoundingBox){
+            this.THREEjsBoundingBox.visible = window.simulation.debug.bounds;
             this.THREEjsBoundingBox.position.copy(this.position);
             const tempMatrix4 = new THREE.Matrix4().setFromMatrix3(this.correctionRotationMatrx.clone().multiply(this.rotationMatrx));
             this.eularRotation = new THREE.Euler().setFromRotationMatrix(tempMatrix4);
@@ -263,7 +261,6 @@ class boxObj{
              this.threeJsObj.material.color.set(this.color);
         }
     }
-
     updatePositionCorrection(h){
 
     }
@@ -273,7 +270,7 @@ class boxObj{
         this.position.add(this.correction.deltaPos.clone().multiplyScalar(h));
         
         this.omega.add(this.correction.deltaOmega.clone().multiplyScalar(h));
-        addOmega(this.rotationMatrx,this.correction.deltaRotation);
+        //addOmega(this.rotationMatrx,this.correction.deltaRotation,1);
     }
 
     initForCycle(){
