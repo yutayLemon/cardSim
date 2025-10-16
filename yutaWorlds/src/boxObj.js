@@ -29,7 +29,7 @@ class boxObj{
         this.rotationMatrx = new THREE.Matrix3(
             1,0,0,
             0,1,0,
-            0,0,1
+            0,0,1 
         );
         this.correctionRotationMatrx = new THREE.Matrix3(
             1,0,0,
