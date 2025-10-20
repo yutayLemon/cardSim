@@ -1,16 +1,10 @@
-//import * as THREE from 'three';
+import * as THREE from 'three';
 
-class THREE{
-    constructor(x,y,z){
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-}
 class meshFace{
     constructor(normal){
         this.edge = null;//one half edge
-        this.normal = normal;
+        this.normal = new THREE.Vector3(normal.x,normal.y,normal.z);
+        this.globalNormal = new THREE.Vector3(normal.x,normal.y,normal.z);
     }
 }
 
@@ -23,6 +17,50 @@ class halfEdge{
         this.face = null;//consistant with normal right hand rule
     }
 }
+
+class vertex{
+    constructor(pos){
+        this.pos = new THREE.Vector3(pos.x,pos.y,pos.z);
+        this.globalPos = new THREE.Vector3(pos.x,pos.y,pos.z);
+        this.edge = null;//edge where vertex is origin
+        //one
+    }
+}
+
+class meshInfo{
+    constructor(){
+        this.edges = [];
+        this.faces = [];
+        this.vertexs = [];
+    }
+
+    updateGlobal(pos,rMatrix){
+        for(const node of this.vertexs){
+            node.globalPos.copy(node.pos);
+            node.globalPos.applyMatrix3(rMatrix);
+            node.globalPos.add(pos);
+        }
+
+        for(const aFace of this.faces){
+            aFace.globalNormal.copy(aFace.normal);
+            aFace.globalNormal.applyMatrix3(rMatrix);
+        }
+    }
+
+    queryEdge(from,to){
+        for(const edge of this.edges){
+            if(edge.tipVertex == to && edge.pair.tipVertex == from){
+                //    v1-edge->v2   edge
+                //             from
+                //    v1<=edge-v2    edge.pair
+                //    to 
+                return edge;
+            }
+        }
+        return false;
+    }
+}
+
 
 //v1->v2
 function newEdge(v1,v2){
@@ -44,35 +82,6 @@ function newEdge(v1,v2){
     return nEdge;
 }
 
-class vertex{
-    constructor(pos){
-        this.pos = pos;
-        this.edge = null;//edge where vertex is origin
-        //one
-    }
-}
-
-class meshInfo{
-    constructor(){
-        this.edges = [];
-        this.faces = [];
-        this.vertexs = [];
-    }
-
-    queryEdge(from,to){
-        for(const edge of this.edges){
-            if(edge.tipVertex == to && edge.pair.tipVertex == from){
-                //    v1-edge->v2   edge
-                //             from
-                //    v1<=edge-v2    edge.pair
-                //    to 
-                return edge;
-            }
-        }
-        return false;
-    }
-}
-
 class simpleMeshClass{
     constructor(vertex){
         this.vertex = vertex;
@@ -82,25 +91,6 @@ class simpleMeshClass{
     addFace(vertexIndexs,normal){
         this.face.push({vertex:vertexIndexs,normal:normal});
     }
-}
-
-
-function getOtherFace(face,edge){
-    if(face == edge.face){
-        return edge.pair.face;
-    }else{
-        return edge.face;
-    }
-}
-
-function getVexes(vertex){
-    let arrV = [];
-    let currentV = vertex.edge.tipVertex;
-    while(currentV != vertex){
-        arrV.push(currentV);
-        currentV = currentV.edge.nextEdge.tipVertex;
-    }
-    return arrV;
 }
 
 //simpleMeshClass
@@ -152,45 +142,6 @@ function halfEdgeBoxMesh(width,height,thickness){
     let offy = height*0.5;
     let offz = thickness*0.5;
     let simpleDataStruct = new simpleMeshClass([
-        new THREE(offx,offy,offz),//0
-        new THREE(offx,offy,-offz),//1
-        new THREE(offx,-offy,offz),//2
-        new THREE(offx,-offy,-offz),//3
-        new THREE(-offx,offy,offz),//4
-        new THREE(-offx,offy,-offz),//5
-        new THREE(-offx,-offy,offz),//6
-        new THREE(-offx,-offy,-offz)//7
-    ]);
-    simpleDataStruct.addFace([4,0,1,5],new THREE(0,1,0));
-    simpleDataStruct.addFace([2,6,7,3],new THREE(0,-1,0));
-
-    simpleDataStruct.addFace([0,2,3,1],new THREE(1,0,0));
-    simpleDataStruct.addFace([6,4,5,7],new THREE(-1,0,0));
-
-    simpleDataStruct.addFace([2,0,4,6],new THREE(0,0,1));
-    simpleDataStruct.addFace([7,5,1,3],new THREE(0,0,-1));
-
-    console.log(makeMesh(simpleDataStruct));
-}
-
-function testDoubleTri(){
-    let testTri = new simpleMeshClass([
-        "a1",
-        "a2",
-        "a3"
-    ]);
-
-    testTri.addFace([0,1,2],"n1");
-    testTri.addFace([2,1,0],"n2");
-
-    console.log(makeMesh(testTri));
-}
-
-/*function halfEdgeBoxMesh(width,height,thickness){
-    let offx = width*0.5;
-    let offy = height*0.5;
-    let offz = thickness*0.5;
-    let simpleDataStruct = new simpleMeshClass([
         new THREE.Vector3(offx,offy,offz),//0
         new THREE.Vector3(offx,offy,-offz),//1
         new THREE.Vector3(offx,-offy,offz),//2
@@ -209,9 +160,28 @@ function testDoubleTri(){
     simpleDataStruct.addFace([2,0,4,6],new THREE.Vector3(0,0,1));
     simpleDataStruct.addFace([7,5,1,3],new THREE.Vector3(0,0,-1));
 
-    console.log(makeMesh(simpleDataStruct));
+    return makeMesh(simpleDataStruct);
 }
 
-*/
-halfEdgeBoxMesh(5,7,1);
-//testDoubleTri();
+function planeMesh(pos,normal){
+    let newPlaneMesh = new meshInfo();
+    newPlaneMesh.faces.push(new meshFace(normal));
+    newPlaneMesh.vertexs.push(new vertex(pos));
+
+    return newPlaneMesh;
+}
+
+function facesAroundVertex(vertex){
+    let res = [];
+    let startEdge = vertex.edge;
+    let currentEdge = vertex.edge;
+
+    do{
+        res.push(currentEdge.face);
+        currentEdge = currentEdge.pair.nextEdge;
+    }while(currentEdge != null && currentEdge != startEdge);
+    
+    return res;
+}
+
+export {halfEdgeBoxMesh,planeMesh,facesAroundVertex}

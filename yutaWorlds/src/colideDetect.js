@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {calcFrictionImpulse,solveLinear,transformToCordinate,reConstruct,getImpulse,calcCollsionImpulse,evalCorrectionVal} from './colideMath.js'
 import {debugPrintContact,debugPrintEdge} from './debug.js'
+import {facesAroundVertex} from './halfEdgeData.js'
 
 //one collsion reolver
 //calsses box-box plane-box ...
@@ -97,12 +98,12 @@ class collsionResolver{
         let minVer = [];
         
         let planecolide = false;
-        for(const node of box.verticeArrGlobal){
-            if(node.y <= plane.position.y){
-                if(node.y-plane.position.y < this.overlap){
-                    this.overlap = node.y-plane.position.y;
+        for(const node of box.meshData.vertexs){
+            if(node.globalPos.y <= plane.position.y){
+                if(node.globalPos.y-plane.position.y < this.overlap){
+                    this.overlap = node.globalPos.y-plane.position.y;
                 }
-                minVer.push(node);
+                minVer.push(node.globalPos);
                 planecolide = true;
             }
         }
@@ -118,7 +119,7 @@ class collsionResolver{
         this.overlap = Math.abs(this.overlap);
         let planeContP = new THREE.Vector3(0,0,0);
         let boxContP = contNode.clone().sub(box.position);
-        this.normal = plane.globalSurfaceNormal[0];
+        this.normal = plane.meshData.faces[0].globalNormal;
         if(this.obj1.class == "plane"){
             this.contactP1 = planeContP;
             this.contactP2 = boxContP;
@@ -126,7 +127,6 @@ class collsionResolver{
             this.contactP1 = boxContP;
             this.contactP2 = planeContP;
         }
-
         return true;   
     }
 
@@ -158,8 +158,8 @@ class collsionResolver{
         box1Cont = contactVes.vertex;
         box2Cont = contactVes.face;
     }else if(this.collsionClass == "edge-edge"){
-        let edge1 = [this.int1.vert[1],findEdgeEnd(this.int1.vert[1],this.obj1.verticeArrGlobal,this.normal)];
-        let edge2 = [this.int2.vert[0],findEdgeEnd(this.int2.vert[0],this.obj2.verticeArrGlobal,this.normal)];
+        let edge1 = [this.int1.vert[1],findEdgeEnd(this.int1.vert[1],this.obj1.meshData,this.normal)];
+        let edge2 = [this.int2.vert[0],findEdgeEnd(this.int2.vert[0],this.obj2.meshData,this.normal)];
         //console.log(debugPrintEdge(edge1,"lin1"));
         //console.log(debugPrintEdge(edge2,"lin2"));
 
@@ -182,23 +182,15 @@ class collsionResolver{
 
 
     testFaceToVertex(){
-        let normalset1 = this.obj1.globalSurfaceNormal;
-        let normalset2 = this.obj2.globalSurfaceNormal;
-        for(const normal of normalset1){
-            if(normal.lengthSq() < 1e-12){
-                continue;
-            }
-
-        if(!this.testOneFace(normal,"box1")){
+        let faceSet1 = this.obj1.meshData.faces;
+        let faceSet2 = this.obj2.meshData.faces;
+        for(const face of faceSet1){
+        if(!this.testOneFace(face.globalNormal,"box1")){
             return false
         }
         }
-    for(const normal of normalset2){
-        if(normal.lengthSq() < 1e-12){
-            continue;
-        }
-
-        if(!this.testOneFace(normal,"box2")){
+    for(const face of faceSet2){
+        if(!this.testOneFace(face.globalNormal,"box2")){
             return false;
         }
     }
@@ -223,8 +215,8 @@ class collsionResolver{
         if(vertexObj.position.clone().sub(faceObj.position).dot(newNorm) < 0){
             newNorm.negate();
         }
-        let int1 = projectShapeVert(faceObj.verticeArrGlobal,newNorm);
-        let int2 = projectShapeVert(vertexObj.verticeArrGlobal,newNorm);
+        let int1 = projectShapeVert(faceObj.meshData,newNorm);
+        let int2 = projectShapeVert(vertexObj.meshData,newNorm);
         //brekake case to select min or max side
 
         let overlapTest = intervalOverlap(int1.inter,int2.inter);
@@ -244,13 +236,13 @@ class collsionResolver{
 
     //Cheak point
     testEdgeToEdge(){
-        let normSet1 = this.obj1.globalSurfaceNormal;
-        let normSet2 = this.obj2.globalSurfaceNormal;
+        let faceSet1 = this.obj1.meshData.faces;
+        let faceSet2 = this.obj2.meshData.faces;
         //len normal1 == normal2
-        for(let i = 0;i<normSet1.length;i++){
+        for(let i = 0;i<faceSet1.length;i++){
         for(let j = 0;j<i;j++){
-            let norm1 = normSet1[i];
-            let norm2 = normSet2[j];
+            let norm1 = faceSet1[i].globalNormal;
+            let norm2 = faceSet2[j].globalNormal;
             let normal = new THREE.Vector3().crossVectors(norm2,norm1);
             if(normal.lengthSq() < 1e-12){
                 continue;
@@ -271,8 +263,8 @@ class collsionResolver{
         newNorm.negate();
     }
 
-    let int1 = projectShapeVert(this.obj1.verticeArrGlobal,newNorm);
-    let int2 = projectShapeVert(this.obj2.verticeArrGlobal,newNorm);
+    let int1 = projectShapeVert(this.obj1.meshData,newNorm);
+    let int2 = projectShapeVert(this.obj2.meshData,newNorm);
         
     let collision = intervalOverlap(int1.inter,int2.inter);
 
@@ -293,9 +285,30 @@ class collsionResolver{
     }
 }
 
+function conatctPointsVertexFace(faceObj,vertexObj,face,intersectVertex,normal){
+    //nomral along face
+    let n1 = face.normal;
+    let neiborFaces = intersectVertex;
+
+    let minDot = Infinity;
+    let antiFace;
+    for(const f of neiborFaces){
+        let dotF = f.normal.dot(n1);
+        if(ditF < minDot){
+            minDot = dotF;
+            antiFace = f;
+        }
+    }
+
+    //clip antiface and face
+    //clip antiface with face
+
+}
+
 function contactPointVertexFace(faceObj,vertexObj,intersectVertex){
     //face and vertex colide
     //global cordinate input
+
     let vertexContactPoint = intersectVertex.clone().sub(vertexObj.position);
     let faceConactPoint = intersectVertex.clone().sub(faceObj.position);
 
@@ -341,24 +354,26 @@ function intervalOverlap(int1,int2){
     }
 }
 
-function findEdgeEnd(start, vertexs, normal) {
-    for (const node of vertexs) {
-        let difVect = start.clone().sub(node);
+
+//TODO refactor
+function findEdgeEnd(start, mesh, normal) {
+    for (const node of mesh.vertexs) {
+        let difVect = start.clone().sub(node.globalPos);
 
         if (difVect.lengthSq() < 1e-24) continue; // same vector
 
         let dot = difVect.dot(normal);
         if (Math.abs(dot) < 1e-12) {
-            return node; // perpendicular
+            return node.globalPos; // perpendicular
         }
     }
     return -1;
 }
 
-function projectShapeVert(vert,unit){//projects shape onto unit vector
+function projectShapeVert(mesh,unit){//projects shape onto unit vector
     //assume all vertexes on one side of 
     //get closest to stuff
-    if(vert.length == 0){
+    if(mesh.vertexs.length == 0){
         console.error("err:0 len");
         return -1;
     }
@@ -367,15 +382,15 @@ function projectShapeVert(vert,unit){//projects shape onto unit vector
     let maxD = -Infinity; 
     let maxV;
 
-    for(const node of vert){
-        let porjDist = node.dot(unit);
+    for(const node of mesh.vertexs){
+        let porjDist = node.globalPos.dot(unit);
         if(minD >= porjDist){
             minD = porjDist;
-            minV = node;
+            minV = node.globalPos;
         }
         if(maxD <= porjDist){
             maxD = porjDist;
-            maxV = node;
+            maxV = node.globalPos;
         }
     }
     return {inter:[minD,maxD],vert:[minV,maxV]};

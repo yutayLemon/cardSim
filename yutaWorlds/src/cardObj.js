@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {state} from './keyInput.js'
 import {addDebugPoint} from './debug.js'
 import {makeCardMdl,loadCardMdl,woodPlane} from './cardMdl.js'
+import {planeMesh} from './halfEdgeData.js'
 
 let g = new THREE.Vector3(0,-0.05,0);
 //let g = new THREE.Vector3(0,0,0);
@@ -32,17 +33,17 @@ class cardObj extends boxObj{
     }
 
     updateBoxDebug(){
-        addDebugPoint(this.globalVertex.topRight[0],{r:100,g:0,b:200});
-        addDebugPoint(this.globalVertex.topRight[1],{r:100,g:0,b:200});
+        addDebugPoint(this.meshData.vertexs[0].globalPos,{r:100,g:0,b:200});
+        addDebugPoint(this.meshData.vertexs[1].globalPos,{r:100,g:0,b:200});
 
-        addDebugPoint(this.globalVertex.topLeft[0],{r:0,g:100,b:200});
-        addDebugPoint(this.globalVertex.topLeft[1],{r:0,g:100,b:200});
+        addDebugPoint(this.meshData.vertexs[2].globalPos,{r:0,g:100,b:200});
+        addDebugPoint(this.meshData.vertexs[3].globalPos,{r:0,g:100,b:200});
 
-        addDebugPoint(this.globalVertex.bottomLeft[0],{r:100,g:50,b:200});
-        addDebugPoint(this.globalVertex.bottomLeft[1],{r:100,g:50,b:200});
+        addDebugPoint(this.meshData.vertexs[4].globalPos,{r:100,g:50,b:200});
+        addDebugPoint(this.meshData.vertexs[5].globalPos,{r:100,g:50,b:200});
 
-        addDebugPoint(this.globalVertex.bottomRight[0],{r:0,g:0,b:100});
-        addDebugPoint(this.globalVertex.bottomRight[1],{r:0,g:0,b:100});
+        addDebugPoint(this.meshData.vertexs[6].globalPos,{r:0,g:0,b:100});
+        addDebugPoint(this.meshData.vertexs[7].globalPos,{r:0,g:0,b:100});
     }
 
     updateTorque(){
@@ -73,17 +74,17 @@ class imovable extends boxObj{
     }
 
     updateBoxDebug(){
-        addDebugPoint(this.globalVertex.topRight[0],{r:100,g:0,b:200});
-        addDebugPoint(this.globalVertex.topRight[1],{r:100,g:0,b:200});
+        addDebugPoint(this.meshData.vertexs[0].globalPos,{r:100,g:0,b:200});
+        addDebugPoint(this.meshData.vertexs[1].globalPos,{r:100,g:0,b:200});
 
-        addDebugPoint(this.globalVertex.topLeft[0],{r:0,g:100,b:200});
-        addDebugPoint(this.globalVertex.topLeft[1],{r:0,g:100,b:200});
+        addDebugPoint(this.meshData.vertexs[2].globalPos,{r:0,g:100,b:200});
+        addDebugPoint(this.meshData.vertexs[3].globalPos,{r:0,g:100,b:200});
 
-        addDebugPoint(this.globalVertex.bottomLeft[0],{r:100,g:50,b:200});
-        addDebugPoint(this.globalVertex.bottomLeft[1],{r:100,g:50,b:200});
+        addDebugPoint(this.meshData.vertexs[4].globalPos,{r:100,g:50,b:200});
+        addDebugPoint(this.meshData.vertexs[5].globalPos,{r:100,g:50,b:200});
 
-        addDebugPoint(this.globalVertex.bottomRight[0],{r:0,g:0,b:100});
-        addDebugPoint(this.globalVertex.bottomRight[1],{r:0,g:0,b:100});
+        addDebugPoint(this.meshData.vertexs[6].globalPos,{r:0,g:0,b:100});
+        addDebugPoint(this.meshData.vertexs[7].globalPos,{r:0,g:0,b:100});
     }
 }
 
@@ -119,17 +120,17 @@ class playerObj extends boxObj{
     }
 
     updateBoxDebug(){
-        addDebugPoint(this.globalVertex.topRight[0],{r:100,g:0,b:200});
-        addDebugPoint(this.globalVertex.topRight[1],{r:100,g:0,b:200});
+        addDebugPoint(this.meshData.vertexs[0].globalPos,{r:100,g:0,b:200});
+        addDebugPoint(this.meshData.vertexs[1].globalPos,{r:100,g:0,b:200});
 
-        addDebugPoint(this.globalVertex.topLeft[0],{r:0,g:100,b:200});
-        addDebugPoint(this.globalVertex.topLeft[1],{r:0,g:100,b:200});
+        addDebugPoint(this.meshData.vertexs[2].globalPos,{r:0,g:100,b:200});
+        addDebugPoint(this.meshData.vertexs[3].globalPos,{r:0,g:100,b:200});
 
-        addDebugPoint(this.globalVertex.bottomLeft[0],{r:100,g:50,b:200});
-        addDebugPoint(this.globalVertex.bottomLeft[1],{r:100,g:50,b:200});
+        addDebugPoint(this.meshData.vertexs[4].globalPos,{r:100,g:50,b:200});
+        addDebugPoint(this.meshData.vertexs[5].globalPos,{r:100,g:50,b:200});
 
-        addDebugPoint(this.globalVertex.bottomRight[0],{r:0,g:0,b:100});
-        addDebugPoint(this.globalVertex.bottomRight[1],{r:0,g:0,b:100});
+        addDebugPoint(this.meshData.vertexs[6].globalPos,{r:0,g:0,b:100});
+        addDebugPoint(this.meshData.vertexs[7].globalPos,{r:0,g:0,b:100});
         
         addDebugPoint(new THREE.Vector3(0,2,0),{r:0,g:200,b:200});
         addDebugPoint(this.position.clone().add(new THREE.Vector3(0,1,0)),{r:200,g:0,b:200});
@@ -141,7 +142,6 @@ class playerObj extends boxObj{
 
     updateForce(){
         this.vel.set(0,0,0);
-        let ff = 0.000001;
         
         if(state['KeyW']){
             this.vel.add(this.fowardVect);
@@ -191,9 +191,7 @@ class approxPlane extends boxObj{
         this.position.set(0,0,0);
         this.mass = Infinity;
         this.THREEjsBoundingBox.visible = false;
-        this.surfaceNormal = [
-            new THREE.Vector3(0,1,0)
-        ];
+        this.meshData = new planeMesh(this.position,new THREE.Vector3(0,1,0));
 
         this.calcInertia();
         this.loadModel(scene);

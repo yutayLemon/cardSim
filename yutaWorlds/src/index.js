@@ -35,8 +35,8 @@ const euler1 = new THREE.Euler(0,0, 0, 'XYZ');
 cards = [];
 cards.push(new cardObj(scene,2));
 cards.push(new cardObj(scene,2));
-cards[0].place(new THREE.Vector3(1,2,0),cards[0].vertex.bottomRight[0]);
-cards[1].place(new THREE.Vector3(0,1,4),cards[1].vertex.bottomRight[1]);
+cards[0].place(new THREE.Vector3(1,2,0),cards[0].meshData.vertexs[6].globalPos);
+cards[1].place(new THREE.Vector3(0,1,4),cards[1].meshData.vertexs[6].globalPos);
 cards[0].color = 0xff00ff;
 cards[1].color = 0x00ff00;
 cards[0].vel.set(0,0,0);
@@ -49,7 +49,7 @@ cards[1].angMomentum.set(0.05,0.05,0.05);
 
 
 player = new playerObj(scene,0.5);
-player.place(new THREE.Vector3(0,1,0),player.vertex.bottomLeft[0]);
+player.place(new THREE.Vector3(-1.5,1,0),player.meshData.vertexs[0].globalPos);
 
 floor = new approxPlane(scene,400);
 //floor = new imovable(scene,300);

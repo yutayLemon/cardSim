@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {addDebugPoint,updateDebug,debugArrow} from './debug.js'
 import {addOmega} from './colideMath.js';
 import {exportObjBox} from "./import.js";
+import {halfEdgeBoxMesh,facesAroundVertex} from './halfEdgeData.js'
 
 class boxObj{
     constructor(scene,size,faceRatio,thickRatio){
@@ -16,6 +17,8 @@ class boxObj{
         this.thickness = this.width * this.thickRatio;
 
         this.position = new THREE.Vector3(0,0,0);
+        this.meshData = halfEdgeBoxMesh(this.width,this.height,this.thickness);
+        
         this.surfaceMaterial = "plastic";
 
         this.mass = 1;
@@ -59,65 +62,6 @@ class boxObj{
         this.texture;
 
         this.name;
-
-        let offx = this.width*0.5;
-        let offy = this.height*0.5;
-        let offz = this.thickness*0.5;
-
-        this.verticeArr = [new THREE.Vector3(offx,offy,offz),
-                           new THREE.Vector3(offx,offy,-offz),
-
-                           new THREE.Vector3(-offx,offy,offz),
-                           new THREE.Vector3(-offx,offy,-offz),
-
-                           new THREE.Vector3(offx,-offy,offz),
-                           new THREE.Vector3(offx,-offy,-offz),
-
-                           new THREE.Vector3(-offx,-offy,offz),
-                           new THREE.Vector3(-offx,-offy,-offz)];
-
-        this.vertex = {
-            topRight:[this.verticeArr[0],this.verticeArr[1]],
-            topLeft:[this.verticeArr[2],this.verticeArr[3]],
-            bottomRight:[this.verticeArr[4],this.verticeArr[5]],
-            bottomLeft:[this.verticeArr[6],this.verticeArr[7]]
-        }
-
-        this.verticeArrGlobal = [new THREE.Vector3(offx,offy,offz),
-                           new THREE.Vector3(offx,offy,-offz),
-
-                           new THREE.Vector3(-offx,offy,offz),
-                           new THREE.Vector3(-offx,offy,-offz),
-
-                           new THREE.Vector3(offx,-offy,offz),
-                           new THREE.Vector3(offx,-offy,-offz),
-
-                           new THREE.Vector3(-offx,-offy,offz),
-                           new THREE.Vector3(-offx,-offy,-offz)];
-
-        this.globalVertex = {
-            topRight:[this.verticeArrGlobal[0],this.verticeArrGlobal[1]],
-            topLeft:[this.verticeArrGlobal[2],this.verticeArrGlobal[3]],
-            bottomRight:[this.verticeArrGlobal[4],this.verticeArrGlobal[5]],
-            bottomLeft:[this.verticeArrGlobal[6],this.verticeArrGlobal[7]]
-        }
-
-        this.surfaceNormal = [
-            new THREE.Vector3(1,0,0),
-            new THREE.Vector3(0,1,0),
-            new THREE.Vector3(0,0,1)
-        ];
-
-        this.globalSurfaceNormal = [
-            new THREE.Vector3(1,0,0),
-            new THREE.Vector3(0,1,0),
-            new THREE.Vector3(0,0,1)
-        ];
-
-        this.planeP = [
-            this.verticeArrGlobal[1],
-            this.verticeArrGlobal[6]
-        ];
 
         this.inertiaTensors = new THREE.Matrix3();
         this.inertiaTensorInverse = new THREE.Matrix3();
@@ -195,17 +139,7 @@ class boxObj{
     }
 
     updateGlobalPos(){
-        for(let i = 0;i<this.verticeArr.length;i++){
-            this.verticeArrGlobal[i].copy(this.verticeArr[i]);
-            this.verticeArrGlobal[i].applyMatrix3(this.rotationMatrx);
-            this.verticeArrGlobal[i].add(this.position);
-        }
-
-
-        for(let i = 0;i<this.surfaceNormal.length;i++){
-            this.globalSurfaceNormal[i].copy(this.surfaceNormal[i]);
-            this.globalSurfaceNormal[i].applyMatrix3(this.rotationMatrx);
-        }
+        this.meshData.updateGlobal(this.position,this.rotationMatrx);
     }
 
     updateTorque(h){
@@ -312,6 +246,7 @@ class boxObj{
         for(const arrow in this.debugArrows){
             this.debugArrows[arrow].delete(scene);
         }
+        this.meshData = null;
     }
             
 }
