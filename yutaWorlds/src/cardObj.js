@@ -5,8 +5,8 @@ import {addDebugPoint} from './debug.js'
 import {makeCardMdl,loadCardMdl,woodPlane} from './cardMdl.js'
 import {planeMesh} from './halfEdgeData.js'
 
-let g = new THREE.Vector3(0,-0.05,0);
-//let g = new THREE.Vector3(0,0,0);
+//let g = new THREE.Vector3(0,-0.05,0);
+let g = new THREE.Vector3(0,0,0);
 const cardWidthToHeight = 1.5;
 const cardWidthToThick = 0.04;
 class cardObj extends boxObj{

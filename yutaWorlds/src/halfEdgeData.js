@@ -163,6 +163,44 @@ function halfEdgeBoxMesh(width,height,thickness){
     return makeMesh(simpleDataStruct);
 }
 
+function halfEdgeFlatFace(points){//points in clockwise order, right hand rule
+    let newHFace = new meshFace();
+    newHFace.normal = new THREE.Vector3(0,1,0);
+    newHFace.edge = new halfEdge();
+
+    let oldAntiwiseEdge;
+    let oldClockwiseEdge;
+    let oldPoint;
+    for(let i = 0;i<points.length;i++){
+        let point = points[(i+1)%points.length];
+        let newP = new vertex(point);
+        let newClockwiseEdge = new halfEdge();
+        let newAntiwiseEdge = new halfEdge();
+
+        newClockwiseEdge.face = newHFace;
+        newAntiwiseEdge.face = newHFace;
+
+        oldAntiwiseEdge.pair = newClockwiseEdge;
+        newClockwiseEdge.pair = oldAntiwiseEdge;
+
+        oldAntiwiseEdge.nextEdge = newAntiwiseEdge;
+        oldClockwiseEdge.nextEdge = newClockwiseEdge;
+
+        newAntiwiseEdge.preEdge = oldAntiwiseEdge;
+        newClockwiseEdge.preEdge = oldClockwiseEdge;
+
+        oldAntiwiseEdge.tipVertex = newP;
+        newClockwiseEdge.tipVertex = oldPoint;
+
+        newP.edge = newAntiwiseEdge;
+
+        oldPoint = newP;
+        oldAntiwiseEdge = newAntiwiseEdge;
+        oldClockwiseEdge = newClockwiseEdge;
+    }
+    return newHFace;
+}
+
 function planeMesh(pos,normal){
     let newPlaneMesh = new meshInfo();
     newPlaneMesh.faces.push(new meshFace(normal));

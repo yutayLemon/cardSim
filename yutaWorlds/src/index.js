@@ -42,10 +42,10 @@ cards[1].color = 0x00ff00;
 cards[0].vel.set(0,0,0);
 
 cards[0].calcInertia();
-cards[1].vel.set(0,-0.03,0);
-cards[1].rotationMatrx.multiply(rotationMatrix3);
-cards[0].rotationMatrx.multiply(rotationMatrix31);
-cards[1].angMomentum.set(0.05,0.05,0.05);
+  cards[1].vel.set(0,0,-0.03);
+//cards[1].rotationMatrx.multiply(rotationMatrix3);
+//cards[0].rotationMatrx.multiply(rotationMatrix31);
+//cards[1].angMomentum.set(0.05,0.05,0.05);
 
 
 player = new playerObj(scene,0.5);
@@ -60,7 +60,8 @@ window.simulation.state.step  = false;
 renderer.render(scene,camera);
 renderer.setAnimationLoop(animate);
 
-window.simulation.objects = cards.concat([player]).concat([floor]).concat(twoCard(scene,1.5,1.5,new THREE.Vector3(1,0.2,0)));//TODO DEBUGGG
+;//window.simulation.objects = cards.concat([player]).concat([floor]).concat(twoCard(scene,1.5,1.5,new THREE.Vector3(1,0.2,0)));//TODO DEBUGGG
+window.simulation.objects = cards.concat([player]).concat([floor]);//.concat(twoCard(scene,1.5,1.5,new THREE.Vector3(1,0.2,0)));//TODO DEBUGGG
 //window.simulation.objects = cards.concat([floor]);//TODO DEBUGGG
 colisionObj = new collsionResolver(window.simulation.objects);
 }

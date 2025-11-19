@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import {calcFrictionImpulse,solveLinear,transformToCordinate,reConstruct,getImpulse,calcCollsionImpulse,evalCorrectionVal} from './colideMath.js'
-import {debugPrintContact,debugPrintEdge} from './debug.js'
+import {calcFrictionImpulse,solveLinear,transformToCordinate,reConstruct,getImpulse,calcCollsionImpulse,evalCorrectionVal, clipAnotB} from './colideMath.js'
+import {vectorisNaN,debugPrintContact,debugPrintEdge} from './debug.js'
 import {facesAroundVertex} from './halfEdgeData.js'
+import { cross } from 'three/src/nodes/TSL.js';
 
 //one collsion reolver
 //calsses box-box plane-box ...
@@ -19,22 +20,39 @@ class collsionResolver{
         this.int2;
         this.info;
         this.objects = arr;
+        this.sepFace;
+
+        this.globalCollisionPoints1 = [];
+        this.globalCollisionPoints2 = [];
+
+        this.relativeCollisionPoints1 = [];
+        this.relativeCollisionPoints2 = [];
     }
 
     
     resolveCollisionImpulse(obj1,obj2){
         this.init(obj1,obj2,obj1.geometryClass+'-'+obj2.geometryClass);
-        let colide = this.testCollsion();
-        if(colide){
+        let colide = this.testCollsion();//gets global collsion points in array
+        //this.update global collsion points
+        this.calcRelativeColsionP();
         
-            let impulse = this.impulseCalc();
-            if(impulse.fail || isNaN(impulse.val)){
+        
+        if(colide){
+            //for each collsion point
+            //calculate impulse
+            for(let i = 0;i<this.relativeCollisionPoints1.length;i++){
+                this.contactP1 = this.relativeCollisionPoints1[i];
+                this.contactP2 = this.relativeCollisionPoints2[i];
+
+                let impulse = this.impulseCalc();
+                if(impulse.fail || isNaN(impulse.val)){
+                    evalCorrectionVal(this);
+                    continue;
+                }
+                calcCollsionImpulse(this,impulse.val);
+                //calcFrictionImpulse(this,impulse.val);
                 evalCorrectionVal(this);
-                return;
             }
-            calcCollsionImpulse(this,impulse.val);
-            //calcFrictionImpulse(this,impulse.val);
-            evalCorrectionVal(this);
         }
     }
 
@@ -54,6 +72,13 @@ class collsionResolver{
         this.int2 = undefined;
 
         this.info = {};
+        this.sepFace;
+
+        this.globalCollisionPoints1 = [];
+        this.globalCollisionPoints2 = [];
+
+        this.relativeCollisionPoints1 = [];
+        this.relativeCollisionPoints2 = [];
     }
     
     testCollsion(){
@@ -68,6 +93,24 @@ class collsionResolver{
                 return -1;
         }
     }
+    
+    calcRelativeColsionP(){
+        this.relativeCollisionPoints1 = [];
+        this.relativeCollisionPoints2 = [];
+
+        for(const point of this.globalCollisionPoints1){
+            vectorisNaN(point);
+            this.relativeCollisionPoints1.push(point.clone().sub(this.obj1.position));
+        }
+        for(const point of this.globalCollisionPoints2){
+            vectorisNaN(point);
+            this.relativeCollisionPoints2.push(point.clone().sub(this.obj2.position));
+        }
+    }
+
+    impulseCalc(){
+        return getImpulse(this,1);
+    }
 
     updateArrCollisions(){
     for(let i = 0;i<this.objects.length;i++){
@@ -77,10 +120,6 @@ class collsionResolver{
             }
         }
     }
-    }
-
-    impulseCalc(){
-        return getImpulse(this,1);
     }
 
 
@@ -113,26 +152,22 @@ class collsionResolver{
         let contNode = new THREE.Vector3(0,0,0);
         let i = 0;
         for(;i<minVer.length;i++){
-            contNode.add(minVer[i]);
+            contNode.add(minVer[i]);//fixxxxxx
         }
         contNode.multiplyScalar(1/i);
+
         this.overlap = Math.abs(this.overlap);
-        let planeContP = new THREE.Vector3(0,0,0);
-        let boxContP = contNode.clone().sub(box.position);
         this.normal = plane.meshData.faces[0].globalNormal;
-        if(this.obj1.class == "plane"){
-            this.contactP1 = planeContP;
-            this.contactP2 = boxContP;
-        }else{
-            this.contactP1 = boxContP;
-            this.contactP2 = planeContP;
-        }
+
+        vectorisNaN(contNode);
+        this.globalCollisionPoints1.push(contNode);//add global contact point
+        this.globalCollisionPoints2.push(contNode);//add global contact point
         return true;   
     }
 
 
     
-    cloideBox2Box(){
+    cloideBox2Box(){//TODO cheakc ordering of priotrity
     this.overlap = Infinity;
     this.collsionClass;
 
@@ -147,35 +182,38 @@ class collsionResolver{
     }
 
     //comute contact points
-    let box1Cont;
-    let box2Cont;
     if(this.collsionClass == "box1face-vertex"){
-        let contactVes = contactPointVertexFace(this.obj1,this.obj2,this.int2.vert[0]);
-        box1Cont = contactVes.face;
-        box2Cont = contactVes.vertex;
+        //clip anti and collsion face
+        vectorisNaN(this.int2.vert[0]);
+        this.globalCollisionPoints1.push(this.int2.vert[0].clone());
+        this.globalCollisionPoints2.push(this.int2.vert[0].clone());
+        getAntiface(this.sepFace,this.obj2.meshData);
     }else if(this.collsionClass == "box2face-vertex"){
-        let contactVes = contactPointVertexFace(this.obj2,this.obj1,this.int1.vert[0]);
-        box1Cont = contactVes.vertex;
-        box2Cont = contactVes.face;
+        vectorisNaN(this.int1.vert[0]);
+        this.globalCollisionPoints1.push(this.int1.vert[0].clone());
+        this.globalCollisionPoints2.push(this.int1.vert[0].clone());
+        getAntiface(this.sepFace,this.obj1.meshData);
     }else if(this.collsionClass == "edge-edge"){
         let edge1 = [this.int1.vert[1],findEdgeEnd(this.int1.vert[1],this.obj1.meshData,this.normal)];
         let edge2 = [this.int2.vert[0],findEdgeEnd(this.int2.vert[0],this.obj2.meshData,this.normal)];
         //console.log(debugPrintEdge(edge1,"lin1"));
         //console.log(debugPrintEdge(edge2,"lin2"));
 
-        let edgeContact = contactPointEdegToEdge(
-                                {obj1:edge1,obj2:edge2},
-                                {src1:this.info.srcnorm1,src2:this.info.srcnorm2,norm:this.normal});
+        let edgeContact = contactPointEdegToEdge({obj1:edge1,obj2:edge2},
+                                                 {src1:this.info.srcnorm1,src2:this.info.srcnorm2,norm:this.normal});
+        
+        
+        
+        if(edgeContact.cross){
+        vectorisNaN(edgeContact.edge1);
+        vectorisNaN(edgeContact.edge2);
 
-        box1Cont = edgeContact.edge1.sub(this.obj1.position);
-        box2Cont = edgeContact.edge2.sub(this.obj2.position);
+        this.globalCollisionPoints1.push(edgeContact.edge1.clone());
+        this.globalCollisionPoints2.push(edgeContact.edge2.clone());
+        }
     }else{
         console.log("collsion class could not be found");
     }
-
-    this.contactP1 = box1Cont;
-    this.contactP2 = box2Cont;
-    
     return true;
     }
 
@@ -185,12 +223,12 @@ class collsionResolver{
         let faceSet1 = this.obj1.meshData.faces;
         let faceSet2 = this.obj2.meshData.faces;
         for(const face of faceSet1){
-        if(!this.testOneFace(face.globalNormal,"box1")){
+        if(!this.testOneFace(face,"box1")){
             return false
         }
         }
     for(const face of faceSet2){
-        if(!this.testOneFace(face.globalNormal,"box2")){
+        if(!this.testOneFace(face,"box2")){
             return false;
         }
     }
@@ -198,7 +236,8 @@ class collsionResolver{
     }
 
 
-    testOneFace(normal,subject){
+    testOneFace(face,subject){
+        let normal = face.globalNormal.clone();
         let faceObj;
         let vertexObj;
         if(subject == "box1"){
@@ -211,7 +250,7 @@ class collsionResolver{
 
         }
 
-        let newNorm = normal.clone();
+        let newNorm = normal;
         if(vertexObj.position.clone().sub(faceObj.position).dot(newNorm) < 0){
             newNorm.negate();
         }
@@ -228,6 +267,7 @@ class collsionResolver{
             this.int1 = int1;
             this.int2 = int2;
             this.overlap = overlapTest.val;
+            this.sepFace = face;
             this.normal.set(newNorm.x,newNorm.y,newNorm.z);
         } 
         return true;
@@ -241,8 +281,8 @@ class collsionResolver{
         //len normal1 == normal2
         for(let i = 0;i<faceSet1.length;i++){
         for(let j = 0;j<i;j++){
-            let norm1 = faceSet1[i].globalNormal;
-            let norm2 = faceSet2[j].globalNormal;
+            let norm1 = faceSet1[i].globalNormal.clone();
+            let norm2 = faceSet2[j].globalNormal.clone();
             let normal = new THREE.Vector3().crossVectors(norm2,norm1);
             if(normal.lengthSq() < 1e-12){
                 continue;
@@ -285,36 +325,25 @@ class collsionResolver{
     }
 }
 
-function conatctPointsVertexFace(faceObj,vertexObj,face,intersectVertex,normal){
-    //nomral along face
+function getAntiface(face,shape2){
     let n1 = face.normal;
-    let neiborFaces = intersectVertex;
+    let faces = shape2.faces;
 
     let minDot = Infinity;
     let antiFace;
-    for(const f of neiborFaces){
+    for(const f of faces){
         let dotF = f.normal.dot(n1);
-        if(ditF < minDot){
+        if(dotF < minDot){
             minDot = dotF;
             antiFace = f;
         }
     }
+    console.log(clipAnotB(antiFace,face));
 
     //clip antiface and face
     //clip antiface with face
-
 }
 
-function contactPointVertexFace(faceObj,vertexObj,intersectVertex){
-    //face and vertex colide
-    //global cordinate input
-
-    let vertexContactPoint = intersectVertex.clone().sub(vertexObj.position);
-    let faceConactPoint = intersectVertex.clone().sub(faceObj.position);
-
-    //relative output
-    return {face:faceConactPoint,vertex:vertexContactPoint};
-}
 
 function contactPointEdegToEdge(edges,normals){
     //obj1Info .edge    .obj   
@@ -334,12 +363,15 @@ function contactPointEdegToEdge(edges,normals){
     //x:srcNormal1
     //y:srcNormal2
     let globalContactPoints = solveLinear(line1,line2);
-
-    let contP1 = reConstruct(globalContactPoints.contactP1,n1,n2,normals.norm);
-    let contP2 = reConstruct(globalContactPoints.contactP2,n1,n2,normals.norm);
-
-    //gloabl
-    return {edge1:contP1,edge2:contP2};
+    if(globalContactPoints.cross){
+        let contP1 = reConstruct(globalContactPoints.contactP1,n1,n2,normals.norm);
+        let contP2 = reConstruct(globalContactPoints.contactP2,n1,n2,normals.norm);
+        vectorisNaN(contP1);
+        vectorisNaN(contP2);
+        //gloabl
+        return {cross:true,edge1:contP1,edge2:contP2};
+    }
+    return {cross:false};
 }
 
 function intervalOverlap(int1,int2){

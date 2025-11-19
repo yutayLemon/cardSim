@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {addDebugPoint,updateDebug,debugArrow} from './debug.js'
+import {addDebugPoint,updateDebug,debugArrow,vectorisNaN} from './debug.js'
 import {addOmega} from './colideMath.js';
 import {exportObjBox} from "./import.js";
 import {halfEdgeBoxMesh,facesAroundVertex} from './halfEdgeData.js'
@@ -152,10 +152,13 @@ class boxObj{
         //console.log(this.force);
         this.acc.set((this.force.x*h)/this.mass,(this.force.y*h)/this.mass,(this.force.z*h)/this.mass);
         this.vel.add(this.acc.clone().multiplyScalar(h));
+        vectorisNaN(this.acc);
+        vectorisNaN(this.vel);
     }
 
     updatePos(h){
         this.position.add(this.vel.clone().multiplyScalar(h));
+        vectorisNaN(this.position);
         ///update omega from impulse
         //this.omega = this.rotationMatrx*this.inertiaTensorInverse*this.rotationMatrx^T*this.angMomentum;
         
@@ -168,6 +171,7 @@ class boxObj{
 
     updateRotation(h){
         addOmega(this.rotationMatrx,this.omega.clone(),h);
+        vectorisNaN(this.omega);
     }
 
     updateThreeJS(){
@@ -204,6 +208,9 @@ class boxObj{
         this.position.add(this.correction.deltaPos.clone().multiplyScalar(h));
         
         this.omega.add(this.correction.deltaOmega.clone().multiplyScalar(h));
+        vectorisNaN(this.vel);
+        vectorisNaN(this.omega);
+        vectorisNaN(this.position);
         //addOmega(this.rotationMatrx,this.correction.deltaRotation,1);
     }
 
@@ -218,6 +225,7 @@ class boxObj{
     place(pos,corner){
         this.position.sub(corner);
         this.position.add(pos);
+        vectorisNaN(this.position);
     }
 
     addToScene(scene){

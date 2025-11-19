@@ -1,8 +1,34 @@
 import * as THREE from 'three';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { color } from 'three/src/nodes/TSL.js';
 
 let debugP = [];
+let debugA = [];
 let debugObj;
+
+function vectorisNaN(vect){
+    if(!vect){
+        console.error(vect);
+        console.error("vector undefined");
+        throw new Error("vector undefined");
+        return;
+    }
+    if(isNaN(vect.x)){
+        console.error(vect);
+        console.error("x value NaN");
+        throw new Error("x value of vector NaN");
+    }
+    if(isNaN(vect.y)){
+        console.error(vect);
+        console.error("y value NaN");
+        throw new Error("y value of vector NaN");
+    }
+    if(isNaN(vect.z)){
+        console.error(vect);
+        console.error("z value NaN");
+        throw new Error("z value of vector NaN");
+    }
+}
 
 function updateDebug(arr){
     updateDebugPoints();
@@ -32,8 +58,6 @@ function updateDebugPoints(){
     debugObj.visible = window.simulation.debug.points;
     debugObj.geometry.attributes.position.needsUpdate = true;
     
-
-
     debugP = [];
 }
 
@@ -54,6 +78,7 @@ function deleteDebugPoints(scene){
 }
 
 function initDebug(scene){
+    debugA = new arrowPool();
     debugP.length = 0;
     const geometry = new THREE.BufferGeometry();
     const vertices = new Float32Array([
@@ -78,6 +103,30 @@ class debugVertex{
 function addDebugPoint(pos,color){
     let newDebug = new debugVertex(pos,color);
     debugP.push(newDebug);
+}
+
+class arrowPool{
+    constructor(scene){
+        this.arrows = [];
+        this.i = 0;
+        this.scene = scene;
+    }
+
+    init(){
+        for(let i = 0;i<this.arrows.length;i++){
+            this.arrows[i].THREEArrow.visible = false;
+        }
+        this.i = 0;
+    }
+
+    add(color,origin,dir){
+        if(this.index >= this.arrows.length){
+            this.arrows.push(new debugArrow(color,this.scene));
+        }
+        this.arrows[this.index].THREEArrow.visible = true;
+        this.arrows[this.index].updateArrow(origin,dir);
+        this.index++;
+    }
 }
 
 class debugArrow{
@@ -158,7 +207,7 @@ function debugPrintEdge(edge,sub){
     str += stringCords(edge[0],"e",sub+"1");
     str += stringCords(edge[1],"e",sub+"2");
 
-    str += '(e_{'+sub+'2}.x+(e_{'+sub+'1}.x-e_{'+sub+'2}.x)*t,e_{'+sub+'2}.y+(e_{'+sub+'1}.y-e_{'+sub+'2}.y)*t,e_{'+sub+'2}.z+(e_{'+sub+'1}.z-e_{'+sub+'2}.z)*t)';
+    str += '(e_{'+sub+'2}.x+(e_{'+sub+'1}.x-e_{'+sub+'2}.x)*t,e_{'+sub+'2}.y+(e_{'+sub+'1}.y-e_{'+sub+'2}.y)*t,e_{'+sub+'2}.z+(e_{'+sub+'1}.z-e_{'+sub+'2}.z)*t)\n';
 
     return str;
 }
@@ -178,4 +227,4 @@ function stringCords(cord,nam,sub){
 
 
 
-export {deleteDebugPoints,updateDebug,initDebug,debugVertex,addDebugPoint,debugP,debugArrow,debugPrintContact,debugPrintEdge}
+export {arrowPool,vectorisNaN,deleteDebugPoints,updateDebug,initDebug,debugVertex,addDebugPoint,debugP,debugArrow,debugPrintContact,debugPrintEdge}

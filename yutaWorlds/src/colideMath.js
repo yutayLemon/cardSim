@@ -1,9 +1,19 @@
 import * as THREE from 'three';
+import {vectorisNaN,debugPrintEdge} from './debug.js';
+import { cross } from 'three/src/nodes/TSL.js';
 //solve linear equasions in cordinate system
 //{n1,n2,normal}
 //solve n1,n2 intersection and interpolate for z
 //global cords
 function solveLinear(line1,line2){
+    console.log(debugPrintEdge(line1,"a"),debugPrintEdge(line2,"b"));
+
+    vectorisNaN(line1[1]);
+    vectorisNaN(line1[0]);
+
+    vectorisNaN(line2[1]);
+    vectorisNaN(line2[0]);
+
     let topt = (line2[1].x-line2[0].x)*(line1[0].y - line2[0].y)-(line2[1].y-line2[0].y)*(line1[0].x - line2[0].x);
     let bottomt = (line2[1].y-line2[0].y)*(line1[1].x-line1[0].x)-(line2[1].x-line2[0].x)*(line1[1].y-line1[0].y);
 
@@ -12,9 +22,18 @@ function solveLinear(line1,line2){
     
     let t = topt/bottomt;
     let u = topu/bottomu;
-    let crossBool = true;
-    if(t > 1 || u > 1){
-        crossBool = false;
+
+    if(t == -Infinity){
+        console.log(line1[0],line2[1]);
+        return {cross:true,contactP1:line1[0],contactP2:line2[1]};
+    }
+    if(t == Infinity){
+        console.log(line1[1],line2[0]);
+        return {cross:true,contactP1:line1[1],contactP2:line2[0]};
+    }
+    
+    if(Math.abs(t) > 1 || Math.abs(u) > 1){//out of bounds
+        return {cross:false}
     }
     let xCord = line1[0].x + (line1[1].x-line1[0].x)*t;
     let yCord = line1[0].y + (line1[1].y-line1[0].y)*t;
@@ -25,20 +44,37 @@ function solveLinear(line1,line2){
     let zCrod1 = line1[0].z + (line1[1].z-line1[0].z)*xRatio1;
     let zCrod2 = line2[0].z + (line2[1].z-line2[0].z)*xRatio2;
     
-    return {cross:crossBool,contactP1:{x:xCord,y:yCord,z:zCrod1},contactP2:{x:xCord,y:yCord,z:zCrod2}};
+    let intersectP1 = {x:xCord,y:yCord,z:zCrod1};
+    let intersectP2 = {x:xCord,y:yCord,z:zCrod2};
+
+    vectorisNaN(intersectP1);
+    vectorisNaN(intersectP2);
+
+    return {cross:true,contactP1:intersectP1,contactP2:intersectP2};
 }
 
 //transform vect{x,y,z} to vect in cordinate system
 //{n1,n2,normal}
 //global cords
 function transformToCordinate(vect,n1,n2,normal){
+    vectorisNaN(vect);
+    vectorisNaN(n1);
+    vectorisNaN(n2);
+    vectorisNaN(normal);
+
     return {x:n1.dot(vect),y:n2.dot(vect),z:normal.dot(vect)};
 }
 
 function reConstruct(vect,n1,n2,normal){
+    vectorisNaN(vect);
+    vectorisNaN(n1);
+    vectorisNaN(n2);
+    vectorisNaN(normal);
+    
     let res = n1.clone().multiplyScalar(vect.x);
     res.add(n2.clone().multiplyScalar(vect.y));
     res.add(normal.clone().multiplyScalar(vect.z));
+    vectorisNaN(res);
 
     return res;
 }
@@ -105,6 +141,8 @@ function getRelativeVel(collision,normal){
     let relativeVel = velPoint2.clone().sub(velPoint1);
 
     let lenAlongNormal = relativeVel.dot(normal);
+    vectorisNaN(relativeVel);
+
     return {lenAlongNormal:lenAlongNormal,relativeVel:relativeVel};
     //relativeVel - relative VECTOR
     //normalVel - velocity along normal
@@ -123,6 +161,7 @@ function getRelativeVelPreCollission(collision,normal){
     let relativeVel = velPoint2.clone().sub(velPoint1);
 
     let lenAlongNormal = relativeVel.dot(normal);
+    vectorisNaN(relativeVel);
     return {lenAlongNormal:lenAlongNormal,relativeVel:relativeVel};
     //relativeVel - relative VECTOR
     //normalVel - velocity along normal
@@ -137,7 +176,6 @@ function getRelativeVelPreCollission(collision,normal){
 //calc impulse
 
 function getImpulse(collision,eFact){//assumed that colidion normal is unit
-
     let contact1 = collision.contactP1;
     let contact2 = collision.contactP2;
     let obj1 = collision.obj1;
@@ -211,8 +249,12 @@ function evalCorrectionVal(collsion){//time for impulse derives velocity to sepe
     let deltaPos1 = normal.clone().multiplyScalar(-deltaX1);
     let deltaPos2 = normal.clone().multiplyScalar(deltaX2);
     //TODO account for vel change
+    
     obj1.correction.deltaPos.add(deltaPos1);
     obj2.correction.deltaPos.add(deltaPos2);
+    
+    vectorisNaN(obj1.correction.deltaPos);
+    vectorisNaN(obj2.correction.deltaPos);
 }
 
 function calcCollsionImpulse(collision,impulse){
@@ -239,6 +281,13 @@ function calcCollsionImpulse(collision,impulse){
 
     obj1.correction.deltaOmega.add(deltaOmega1);
     obj2.correction.deltaOmega.add(deltaOmega2);
+
+    vectorisNaN(obj1.correction.deltaOmega);
+    vectorisNaN(obj2.correction.deltaOmega);
+
+    vectorisNaN(obj1.correction.deltaVel);
+    vectorisNaN(obj2.correction.deltaVel);
+
 }
 
 function getFrictionFactor(obj1,obj2){
@@ -279,7 +328,7 @@ function applyRotation(rotx,roty,rotz,matrix){
 
 
 //start with face A clip off face B
-function clipAnotB(faceA,faceB){
+function clipAnotB(faceA,faceB){//seperate with faceB
     let startEdge = faceA.edge;
     let currentEdge = faceA.edge;
     let lastPoint = startEdge.pair.tipVertex;
@@ -291,17 +340,22 @@ function clipAnotB(faceA,faceB){
     do{
         currentPoint = currentEdge.tipVertex;
         currentVonFace = isPointInConvex(faceB,currentPoint);
-
+        console.log(lastPoint);
+        vectorisNaN(lastPoint.globalPos);
+        vectorisNaN(currentPoint.globalPos);
         if(lastVonFace && currentVonFace){
-            colidePoints.push(lastPoint);
-            colidePoints.push(currentPoint);
+            colidePoints.push(lastPoint.globalPos);
+            colidePoints.push(currentPoint.globalPos);
         }else if(!lastVonFace && currentVonFace){
-            let crossLin = getPolygonIntersection(faceB,lastPoint.currentPoint);
+            let crossLin = getPolygonIntersection(faceB,lastPoint.globalPos,currentPoint.globalPos);
             colidePoints.push(crossLin.contactP2);
+            vectorisNaN(crossLin.contactP2);
         }else if(lastVonFace && !currentVonFace){
-            let crossLin = getPolygonIntersection(faceB,lastPoint.currentPoint);
-            colidePoints.push(currentPoint);
+            let crossLin = getPolygonIntersection(faceB,lastPoint.globalPos,currentPoint.globalPos);
+            //cover undefined case TODO FUCKER
+            colidePoints.push(currentPoint.globalPos);
             colidePoints.push(crossLin.contactP2);
+            vectorisNaN(crossLin.contactP2);
         }
 
         currentEdge = currentEdge.nextEdge;
@@ -314,9 +368,11 @@ function clipAnotB(faceA,faceB){
 }
 
 function getPolygonIntersection(face,v1,v2){
+    vectorisNaN(v1);
+    vectorisNaN(v2);
     let startEdge = face.edge;
     let currentEdge = face.edge;
-    let cordinateBasis = cordinateAlongNormal(face.globalNormal);
+    let cordinateBasis = cordinateAlongNormal(face.globalNormal);//cheack normalll...TODO
 
     do{
         let startV = currentEdge.pair.tipVertex.globalPos;
@@ -331,11 +387,12 @@ function getPolygonIntersection(face,v1,v2){
         if(res.cross){
             return res;
         }
+        currentEdge = currentEdge.nextEdge;
     }while(currentEdge != null && startEdge != currentEdge);
     return {cross:false};
 }
 
-function cordinateAlongNormal(normal){
+function cordinateAlongNormal(normal){//generates one non parralel vector for a basis
     let u1 = normal.clone();
     if(u1.x == 0 && u1.z == 0){
         //(0,y,0)
@@ -346,23 +403,29 @@ function cordinateAlongNormal(normal){
     }
 
     u1.sub(normal.clone().multiplyScalar(normal.dot(u1)));
-    u2 = new THREE.Vector3().crossVectors(u1,normal);
+    let u2 = new THREE.Vector3().crossVectors(u1,normal);
     u2.normalize();
 
     return {n1:u1,n2:u2,normal:normal.clone()};
 }
 
-
 function isPointInConvex(face,queryVertex){
-    //add out binary serch
-    let queryV = queryVertex.globalPos.clone().sub(face.globalNormal.multiplyScalar(queryVertex.globalPos.dot(face.globalNormal)));
+    //add binary serch mby
+    let facePtoQuery = queryVertex.globalPos.clone().sub(face.edge.tipVertex.globalPos.clone());
+    let queryV = queryVertex.globalPos.clone().sub(face.globalNormal.clone().multiplyScalar(facePtoQuery.dot(face.globalNormal)));
+    
     let startEdge = face.edge;
 
     let startV = startEdge.tipVertex;
     let currentEdge = startEdge.nextEdge;
+    let currentVertex;
+    let endReached = false;
     
-    while(currentEdge && currentEdge != startEdge){
-        let currentVertex = currentEdge.tipVertex;
+    while(currentEdge && !endReached){
+        if(currentEdge == startEdge){//runs one more time
+            endReached = true;
+        }
+        currentVertex = currentEdge.tipVertex;
         let startToCurrent = currentVertex.globalPos.clone().sub(startV.globalPos);
         let startToQuery = queryV.clone().sub(startV.globalPos);
 
@@ -370,31 +433,28 @@ function isPointInConvex(face,queryVertex){
 
         let dir = cross.dot(face.globalNormal);
 
+        currentEdge = currentEdge.nextEdge;
+
         //cheacks if point is on right or left of partition
-        if(dir <= 0){
+        if(dir < 0){
             break;
         }
-
-        currentEdge = currentEdge.nextEdge;
     }
 
-    let boundMax = currentVertex;
-    let boundMin = currentEdge.preEdge.tipVertex;
+    let boundMax = currentEdge.preEdge.tipVertex;
+    let boundMin = currentEdge.preEdge.preEdge.tipVertex;
 
     let boundMinToMax = boundMax.globalPos.clone().sub(boundMin.globalPos);
     let boundMinToQuery = queryV.clone().sub(boundMin.globalPos);
 
     let cross = new THREE.Vector3().crossVectors(boundMinToMax,boundMinToQuery);
-
+    console.log(boundMax,boundMin,cross);
     let dir = cross.dot(face.globalNormal);
 
     if(dir==0){
-        if(boundMinToMax.lengthSq() <= boundMinToQuery.lengthSq()){
-            return true;
-        }else{
-            false;
-        }
+        return boundMinToMax.lengthSq() <= boundMinToQuery.lengthSq();
     }
+
     if(dir<0){
         return false;
     }else{
