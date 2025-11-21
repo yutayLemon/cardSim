@@ -19,8 +19,9 @@ function main(){
   window.simulation.state.simPause = false;
 //WTF
 //       const euler = new THREE.Euler(Math.PI*0.25, Math.PI*0.25, 0, 'XYZ');
-//        const euler = new THREE.Euler( Math.PI*0.25,0, 0, 'XYZ');
-const euler = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math.random()*Math.PI, 'XYZ');
+       // const euler = new THREE.Euler( Math.PI*0.25,0, 0, 'XYZ');
+        const euler = new THREE.Euler( 0,0, 0, 'XYZ');
+//const euler = new THREE.Euler(Math.random()*Math.PI,Math.random()*Math.PI, Math.random()*Math.PI, 'XYZ');
 
         const rotationMatrix4 = new THREE.Matrix4().makeRotationFromEuler(euler);
         const rotationMatrix3 = new THREE.Matrix3().setFromMatrix4(rotationMatrix4);
@@ -43,8 +44,8 @@ cards[0].vel.set(0,0,0);
 
 cards[0].calcInertia();
   cards[1].vel.set(0,0,-0.03);
-//cards[1].rotationMatrx.multiply(rotationMatrix3);
-//cards[0].rotationMatrx.multiply(rotationMatrix31);
+cards[1].rotationMatrx.multiply(rotationMatrix3);
+cards[0].rotationMatrx.multiply(rotationMatrix31);
 //cards[1].angMomentum.set(0.05,0.05,0.05);
 
 

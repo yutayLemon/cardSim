@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {calcFrictionImpulse,solveLinear,transformToCordinate,reConstruct,getImpulse,calcCollsionImpulse,evalCorrectionVal, clipAnotB} from './colideMath.js'
-import {vectorisNaN,debugPrintContact,debugPrintEdge} from './debug.js'
+import {vectorisNaN,debugPrintContact,debugPrintEdge,stringBox,stringCords} from './debug.js'
 import {facesAroundVertex} from './halfEdgeData.js'
 import { cross } from 'three/src/nodes/TSL.js';
 
@@ -183,16 +183,36 @@ class collsionResolver{
 
     //comute contact points
     if(this.collsionClass == "box1face-vertex"){
+        
+    console.log(stringBox(this.obj1.meshData,"ba"));
+    console.log(stringBox(this.obj2.meshData,"bb"));
         //clip anti and collsion face
         vectorisNaN(this.int2.vert[0]);
-        this.globalCollisionPoints1.push(this.int2.vert[0].clone());
-        this.globalCollisionPoints2.push(this.int2.vert[0].clone());
-        getAntiface(this.sepFace,this.obj2.meshData);
+        //this.globalCollisionPoints1.push(this.int2.vert[0].clone());
+        //this.globalCollisionPoints2.push(this.int2.vert[0].clone());
+        //clip faces
+        let contactPoints = getAntiface(this.sepFace,this.obj2.meshData);
+        console.log(contactPoints);
+
+        for(const p of contactPoints){
+            this.globalCollisionPoints1.push(p);
+            this.globalCollisionPoints2.push(p);
+        }
     }else if(this.collsionClass == "box2face-vertex"){
+        
+    console.log(stringBox(this.obj1.meshData,"ba"));
+    console.log(stringBox(this.obj2.meshData,"bb"));
         vectorisNaN(this.int1.vert[0]);
-        this.globalCollisionPoints1.push(this.int1.vert[0].clone());
-        this.globalCollisionPoints2.push(this.int1.vert[0].clone());
-        getAntiface(this.sepFace,this.obj1.meshData);
+        //this.globalCollisionPoints1.push(this.int1.vert[0].clone());
+        //this.globalCollisionPoints2.push(this.int1.vert[0].clone());
+        //clip
+        let contactPoints = getAntiface(this.sepFace,this.obj1.meshData);
+        console.log(contactPoints);
+
+        for(const p of contactPoints){
+            this.globalCollisionPoints1.push(p);
+            this.globalCollisionPoints2.push(p);
+        }
     }else if(this.collsionClass == "edge-edge"){
         let edge1 = [this.int1.vert[1],findEdgeEnd(this.int1.vert[1],this.obj1.meshData,this.normal)];
         let edge2 = [this.int2.vert[0],findEdgeEnd(this.int2.vert[0],this.obj2.meshData,this.normal)];
@@ -338,7 +358,14 @@ function getAntiface(face,shape2){
             antiFace = f;
         }
     }
-    console.log(clipAnotB(antiFace,face));
+    let contP = clipAnotB(antiFace,face);
+    //DEBUG
+    let str = "";
+    for(var i = 0;i<contP.length;i++){
+        str += stringCords(contP[i],"c",i);
+    }
+    console.log(str);
+    return contP;
 
     //clip antiface and face
     //clip antiface with face

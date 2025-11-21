@@ -40,6 +40,7 @@ function allUpdateArrow(arr){
         item.updateArrows();
         item.updateBoxDebug();
     }
+    debugA.init();
 }
 
 function updateDebugPoints(){
@@ -78,7 +79,7 @@ function deleteDebugPoints(scene){
 }
 
 function initDebug(scene){
-    debugA = new arrowPool();
+    debugA = new arrowPool(scene);
     debugP.length = 0;
     const geometry = new THREE.BufferGeometry();
     const vertices = new Float32Array([
@@ -108,7 +109,7 @@ function addDebugPoint(pos,color){
 class arrowPool{
     constructor(scene){
         this.arrows = [];
-        this.i = 0;
+        this.index = 0;
         this.scene = scene;
     }
 
@@ -116,7 +117,7 @@ class arrowPool{
         for(let i = 0;i<this.arrows.length;i++){
             this.arrows[i].THREEArrow.visible = false;
         }
-        this.i = 0;
+        this.index = 0;
     }
 
     add(color,origin,dir){
@@ -214,17 +215,16 @@ function debugPrintEdge(edge,sub){
 
 function stringBox(box,id){
     let str = '';
-    let vertexs = box.verticeArrGlobal;
+    let vertexs = box.vertexs;
     for(let i = 0;i<vertexs.length;i++){
-        str += stringCords(vertexs[i],'P',id+'i'+i);
+        str += stringCords(vertexs[i].globalPos,'P',id+'i'+i);
     }
-    str += stringCords(box.position,"O",id);
     return str;
 }
+
 function stringCords(cord,nam,sub){
     return nam+'_{'+sub+'}=('+cord.x+','+cord.z+','+cord.y+')\n';
 }
 
 
-
-export {arrowPool,vectorisNaN,deleteDebugPoints,updateDebug,initDebug,debugVertex,addDebugPoint,debugP,debugArrow,debugPrintContact,debugPrintEdge}
+export {debugA,debugP,vectorisNaN,stringCords,deleteDebugPoints,stringBox,updateDebug,initDebug,debugVertex,addDebugPoint,debugArrow,debugPrintContact,debugPrintEdge}

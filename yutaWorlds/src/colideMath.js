@@ -1,18 +1,21 @@
 import * as THREE from 'three';
-import {vectorisNaN,debugPrintEdge} from './debug.js';
+import {vectorisNaN,debugPrintEdge,debugA} from './debug.js';
 import { cross } from 'three/src/nodes/TSL.js';
 //solve linear equasions in cordinate system
 //{n1,n2,normal}
 //solve n1,n2 intersection and interpolate for z
 //global cords
 function solveLinear(line1,line2){
-    console.log(debugPrintEdge(line1,"a"),debugPrintEdge(line2,"b"));
 
     vectorisNaN(line1[1]);
     vectorisNaN(line1[0]);
 
     vectorisNaN(line2[1]);
     vectorisNaN(line2[0]);
+    if(line1[0] == line1[1] || line2[0] == line2[1]){
+        console.warn("point not line");
+        return {cross:false};
+    }
 
     let topt = (line2[1].x-line2[0].x)*(line1[0].y - line2[0].y)-(line2[1].y-line2[0].y)*(line1[0].x - line2[0].x);
     let bottomt = (line2[1].y-line2[0].y)*(line1[1].x-line1[0].x)-(line2[1].x-line2[0].x)*(line1[1].y-line1[0].y);
@@ -23,16 +26,14 @@ function solveLinear(line1,line2){
     let t = topt/bottomt;
     let u = topu/bottomu;
 
-    if(t == -Infinity){
-        console.log(line1[0],line2[1]);
+    if(t == -Infinity){//FIX correctly consider overlaping case
         return {cross:true,contactP1:line1[0],contactP2:line2[1]};
     }
-    if(t == Infinity){
-        console.log(line1[1],line2[0]);
+    if(t == Infinity){//FIX correctly consider overlaping case
         return {cross:true,contactP1:line1[1],contactP2:line2[0]};
     }
     
-    if(Math.abs(t) > 1 || Math.abs(u) > 1){//out of bounds
+    if((t < 0 || t > 1) || (u < 0 || u > 1)){//out of bounds
         return {cross:false}
     }
     let xCord = line1[0].x + (line1[1].x-line1[0].x)*t;
@@ -330,31 +331,38 @@ function applyRotation(rotx,roty,rotz,matrix){
 //start with face A clip off face B
 function clipAnotB(faceA,faceB){//seperate with faceB
     let startEdge = faceA.edge;
+    let startP = startEdge.pair.tipVertex;
     let currentEdge = faceA.edge;
     let lastPoint = startEdge.pair.tipVertex;
     let currentPoint;
     let lastVonFace = isPointInConvex(faceB,lastPoint);
     let currentVonFace;
+    console.log("startP:",lastPoint);
 
     let colidePoints = [];
+    let str = "";
     do{
         currentPoint = currentEdge.tipVertex;
         currentVonFace = isPointInConvex(faceB,currentPoint);
-        console.log(lastPoint);
         vectorisNaN(lastPoint.globalPos);
         vectorisNaN(currentPoint.globalPos);
         if(lastVonFace && currentVonFace){
-            colidePoints.push(lastPoint.globalPos);
-            colidePoints.push(currentPoint.globalPos);
+            str += "a";
+            //colidePoints.push(lastPoint.globalPos);
+            colidePoints.push(currentPoint.globalPos.clone());
         }else if(!lastVonFace && currentVonFace){
+            str += "b";
             let crossLin = getPolygonIntersection(faceB,lastPoint.globalPos,currentPoint.globalPos);
-            colidePoints.push(crossLin.contactP2);
+            colidePoints.push(new THREE.Vector3(crossLin.contactP2.x,crossLin.contactP2.y,crossLin.contactP2.z));
+            colidePoints.push(currentPoint.globalPos.clone());
             vectorisNaN(crossLin.contactP2);
         }else if(lastVonFace && !currentVonFace){
+            str += "c";
+            console.log(lastPoint.globalPos,currentPoint.globalPos);
             let crossLin = getPolygonIntersection(faceB,lastPoint.globalPos,currentPoint.globalPos);
             //cover undefined case TODO FUCKER
-            colidePoints.push(currentPoint.globalPos);
-            colidePoints.push(crossLin.contactP2);
+            colidePoints.push(new THREE.Vector3(crossLin.contactP2.x,crossLin.contactP2.y,crossLin.contactP2.z));
+            //colidePoints.push(currentPoint.globalPos);
             vectorisNaN(crossLin.contactP2);
         }
 
@@ -363,6 +371,14 @@ function clipAnotB(faceA,faceB){//seperate with faceB
         lastPoint = currentPoint;
         currentVonFace = null;
     }while(startEdge != currentEdge);
+    //clip below face step
+    //clip points of faceA in faceB
+    
+
+    for(const p of colidePoints){
+        debugA.add(0xff00ff,p,faceB.globalNormal);
+    }
+    console.log(str);
 
     return colidePoints;
 }
@@ -373,7 +389,7 @@ function getPolygonIntersection(face,v1,v2){
     let startEdge = face.edge;
     let currentEdge = face.edge;
     let cordinateBasis = cordinateAlongNormal(face.globalNormal);//cheack normalll...TODO
-
+    let terminate = false;
     do{
         let startV = currentEdge.pair.tipVertex.globalPos;
         let endV = currentEdge.tipVertex.globalPos;
@@ -385,6 +401,8 @@ function getPolygonIntersection(face,v1,v2){
         );
 
         if(res.cross){
+            res.contactP1 = reConstruct(res.contactP1,cordinateBasis.n1,cordinateBasis.n2,cordinateBasis.normal);
+            res.contactP2 = reConstruct(res.contactP2,cordinateBasis.n1,cordinateBasis.n2,cordinateBasis.normal);
             return res;
         }
         currentEdge = currentEdge.nextEdge;
@@ -448,7 +466,6 @@ function isPointInConvex(face,queryVertex){
     let boundMinToQuery = queryV.clone().sub(boundMin.globalPos);
 
     let cross = new THREE.Vector3().crossVectors(boundMinToMax,boundMinToQuery);
-    console.log(boundMax,boundMin,cross);
     let dir = cross.dot(face.globalNormal);
 
     if(dir==0){

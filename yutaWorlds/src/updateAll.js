@@ -27,9 +27,9 @@ function allInitForCycle(arr){for(const item of arr){
     item.initForCycle();}}
 
 function allDamp(arr){for(const item of arr){
-    let factor = 0.98;
+    let factor = 0.999;
     //item.vel.multiplyScalar(factor);
-    item.omega.multiplyScalar(factor);
+    //item.omega.multiplyScalar(factor);
 }}
 
 

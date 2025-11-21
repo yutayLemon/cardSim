@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {addDebugPoint,updateDebug,debugArrow,vectorisNaN} from './debug.js'
+import {debugA,addDebugPoint,updateDebug,debugArrow,vectorisNaN} from './debug.js'
 import {addOmega} from './colideMath.js';
 import {exportObjBox} from "./import.js";
 import {halfEdgeBoxMesh,facesAroundVertex} from './halfEdgeData.js'
@@ -112,26 +112,12 @@ class boxObj{
         });
         this.THREEjsBoundingBox = new THREE.Mesh(boxGemo,boxMet);
         scene.add(this.THREEjsBoundingBox);
-        this.debugArrows = {
-            vel:new debugArrow(0xff0000,scene),
-            acc:new debugArrow(0x00ff00,scene),
-            contact:new debugArrow(0x0000ff,scene),
-            omega:new debugArrow(0xff00ff,scene),
-            impulse:new debugArrow(0xff00ff,scene),
-            angimplse:new debugArrow(0xff00ff,scene),
-            coliNorm:new debugArrow(0x777777,scene)
-        }
-
     }
     //debug
     updateArrows(){
-        this.debugArrows.acc.updateArrow(this.position,this.acc);
-        this.debugArrows.vel.updateArrow(this.position,this.vel);
-        this.debugArrows.contact.updateArrow(this.position);
-        this.debugArrows.omega.updateArrow(this.position,this.omega);
-        this.debugArrows.impulse.updateArrow(this.position);
-        this.debugArrows.angimplse.updateArrow(this.position);
-        this.debugArrows.coliNorm.updateArrow(this.coliNorm);
+        debugA.add(0xff0000,this.position,this.acc);
+        debugA.add(0x00ff00,this.position,this.vel);
+        debugA.add(0xff00ff,this.position,this.omega);
     }
 
     updateBoxDebug(){
