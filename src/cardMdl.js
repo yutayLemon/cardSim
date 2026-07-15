@@ -44,9 +44,9 @@ function makeCardMdl(width){
 
 function woodPlane(size){
     let repNum = Math.floor(size/lenPerTile);
-    if(lenPerTile == 0){
-        lenPerTile = 1;
-    }
+   // if(lenPerTile == 0){
+     //   lenPerTile = 1;
+    //}
     woodTexture.repeat.set(repNum, repNum);
     const planeMaterial = new THREE.MeshStandardMaterial({ map: woodTexture });
     planeMaterial.side = THREE.DoubleSide;
